@@ -1,17 +1,11 @@
 package main
 
 import (
-	"go/importer"
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"plugin"
 	"strconv"
-	"strings"
 
 	"github.com/codegangsta/negroni"
-	"github.com/fatih/color"
 	"github.com/gorilla/mux"
 	"github.com/krhancoc/frud/config"
 	"github.com/krhancoc/frud/database"
@@ -59,55 +53,9 @@ func StartServer(path string) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(mux.MiddlewareFunc(middleware.Converter))
 
-	prefix := "_plugins/out/"
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
-	}
 	// Import the package
-	importString := dir[len(os.Getenv("GOPATH")+"/src/"):] + "/_plugins/main"
 	for _, plug := range conf.Plugins {
-		p, err := plugin.Open(prefix + plug + ".so")
-		pkg, err := importer.For("source", nil).Import(importString)
-		if err != nil {
-			panic(err)
-		}
-		for _, name := range pkg.Scope().Names() {
-			definition := pkg.Scope().Lookup(name)
-			if strings.HasPrefix(definition.Type().Underlying().String(), "struct") && definition.Exported() {
-				obj, err := p.Lookup(name)
-				if err != nil {
-					continue
-				}
-				switch inter := obj.(type) {
-				case Crud:
-					var handler http.Handler
-					println()
-					color.Blue("Attaching Endpoints from plugins: ")
-					handler = MakeHandler(ctx, inter.Get)
-					router.
-						Methods("GET").
-						Path(inter.GetPath()).
-						Name(inter.GetName()).
-						Handler(handler)
-					color.Green("%s -- %s -- %s : %s", inter.GetName(), "GET", inter.GetPath(), inter.GetDescription())
-				default:
-					println()
-					color.Red("%s does not implement the Crud interface", name)
-					m, err := CheckUnimplimented(obj)
-					if err != "" {
-						println(err)
-					}
-					color.Yellow("%s is missing the following methods:", name)
-					for _, method := range m {
-						color.Yellow(method)
-					}
-					println()
-				}
-			}
-		}
-		println()
-
+		ApplyPlugin(plug, router, ctx)
 	}
 	// security
 	isDevelopment := true

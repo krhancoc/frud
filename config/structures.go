@@ -7,9 +7,15 @@ import (
 
 // Configuration object that acts as the parent to others
 type Configuration struct {
-	Context  *Context  `json:"context"`
-	Database *Database `json:"database"`
-	Plugins  []string  `json:"plugins"`
+	Context  *Context    `json:"context"`
+	Database *Database   `json:"database"`
+	Plugins  *PlugConfig `json:"plugins"`
+}
+
+type PlugConfig struct {
+	PathToCode     string   `json:"pathtocode,omitempty"`
+	PathToCompiled string   `json:"pathtocompiled,omitempty"`
+	Names          []string `json:"names"`
 }
 
 // Context of the server itself

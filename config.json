@@ -10,5 +10,9 @@
     "user": "neo4j",
     "password": "secret"
   },
-  "plugins": ["entry", "anotherentry"]
+  "plugins": {
+    "pathtocompiled": "_plugins/out",
+    "pathtocode": "_plugins/main",
+    "names": ["entry", "anotherentry"]
+  }
 }

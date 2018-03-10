@@ -60,6 +60,7 @@ func CheckUnimplimented(obj plugin.Symbol) ([]string, string) {
 }
 
 func hasCrud(inter Crud, ctx config.AppContext, router *mux.Router) {
+
 	var handler http.Handler
 	println()
 	color.Blue("Attaching Endpoints from plugins: ")
@@ -73,6 +74,7 @@ func hasCrud(inter Crud, ctx config.AppContext, router *mux.Router) {
 }
 
 func noCrud(name string, obj plugin.Symbol) {
+
 	println()
 	color.Red("%s does not implement the Crud interface", name)
 	m, err := CheckUnimplimented(obj)
@@ -112,6 +114,7 @@ func ApplyPlugin(plug string, router *mux.Router, ctx config.AppContext) {
 			if err != nil {
 				continue
 			}
+			// Bleh don't like this orginization but exploring phase!
 			switch inter := obj.(type) {
 			case Crud:
 				hasCrud(inter, ctx, router)

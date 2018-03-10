@@ -5,13 +5,31 @@ import (
 	"go/importer"
 	"go/types"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"plugin"
 	"strings"
 
+	"github.com/fatih/color"
+	"github.com/gorilla/mux"
 	"github.com/krhancoc/frud/config"
 )
+
+type HandlerFunc func(http.ResponseWriter, *http.Request, config.AppContext)
+
+func MakeHandler(ctx config.AppContext, fn HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fn(w, r, ctx)
+	}
+}
+
+type Crud interface {
+	Get(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+	// Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+	// Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+	// Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+}
 
 type PlugManager struct {
 	Plugs []*Plug
@@ -31,7 +49,7 @@ type Definition interface {
 	GetDescription() string
 }
 
-func getImportString(conf config.PlugConfig) string {
+func getImportString(conf *config.PlugConfig) string {
 
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
@@ -40,7 +58,7 @@ func getImportString(conf config.PlugConfig) string {
 	return dir[len(os.Getenv("GOPATH")+"/src/"):] + "/" + conf.PathToCode
 }
 
-func plugPack(plug string, conf config.PlugConfig) (*plugin.Plugin, *types.Package, error) {
+func plugPack(plug string, conf *config.PlugConfig) (*plugin.Plugin, *types.Package, error) {
 
 	importString := getImportString(conf)
 	p, err := plugin.Open(conf.PathToCompiled + plug + ".so")
@@ -62,7 +80,7 @@ func isPlugin(o types.Object) bool {
 }
 
 // CreatePlugManager creates the manager object for Plugins
-func CreatePlugManager(conf config.PlugConfig) (*PlugManager, error) {
+func CreatePlugManager(conf *config.PlugConfig) (*PlugManager, error) {
 
 	var plugManager *PlugManager
 	var plugs []*Plug
@@ -79,23 +97,61 @@ func CreatePlugManager(conf config.PlugConfig) (*PlugManager, error) {
 			definition := pkg.Scope().Lookup(name)
 			// Check for structure
 			if isPlugin(definition) {
-				obj, _ := p.Lookup(name)
-				switch inter := obj.(type) {
-				case Definition:
-					thisPlug := Plug{
-						Name:        inter.GetName(),
-						Description: inter.GetDescription(),
-						EntryPoint:  inter.GetPath(),
-						Package:     pkg,
-						Main:        &obj,
-					}
-					plugs = append(plugs, &thisPlug)
-				default:
-					return plugManager, fmt.Errorf("Definition functions not implemented for - %s", name)
+				obj, err := p.Lookup(name)
+				if err != nil {
+					continue
 				}
+				unimplimented := CheckDefinition(obj)
+				if len(unimplimented) > 0 {
+					return plugManager, fmt.Errorf("Unimplemented definition functions in - %s, %s", name, strings.Join(unimplimented, ","))
+				}
+				inter := obj.(Definition)
+				thisPlug := Plug{
+					Name:        inter.GetName(),
+					Description: inter.GetDescription(),
+					EntryPoint:  inter.GetPath(),
+					Package:     pkg,
+					Main:        &obj,
+				}
+				color.Yellow("Plugin found - %s: %s", thisPlug.Name, thisPlug.Description)
+				plugs = append(plugs, &thisPlug)
 			}
 		}
 	}
-	plugManager.Plugs = plugs
+	println()
+	plugManager = &PlugManager{
+		Plugs: plugs,
+	}
 	return plugManager, nil
+}
+
+func (manager *PlugManager) AttachRoutes(router *mux.Router, ctx config.AppContext) error {
+
+	color.Cyan("Attaching routes...")
+	for _, plug := range manager.Plugs {
+
+		println()
+
+		color.Yellow("Plugin %s", plug.Name)
+		color.Yellow("---------------------")
+		unimplimented := plug.CheckUnimplimented()
+		if len(unimplimented) > 0 {
+			return fmt.Errorf("Plug: %s, unimplimented - %s", plug.Name, strings.Join(unimplimented, ","))
+		}
+		inter := (*plug.Main).(Crud)
+		methods := []string{"Get"}
+		for _, method := range methods {
+			var handler http.Handler
+			println()
+			color.Blue("Attaching Endpoints from plugins: ")
+			handler = MakeHandler(ctx, inter.Get)
+			router.
+				Methods(method).
+				Path(plug.EntryPoint).
+				Name(plug.Name).
+				Handler(handler)
+			color.Green("%s -- %s -- %s : %s", plug.Name, method, plug.EntryPoint, plug.Description)
+		}
+	}
+	return nil
 }

@@ -18,8 +18,8 @@ type AnotherEntryEndpoint struct {
 }
 
 var AnotherEntryEndpointObject AnotherEntryEndpoint = AnotherEntryEndpoint{
-	Name:        "Entry",
-	Description: "Entry object description",
+	Name:        "AnotherEntry",
+	Description: "AnotherEntry object description",
 	Path:        "/another",
 }
 

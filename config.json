@@ -11,8 +11,8 @@
     "password": "secret"
   },
   "plugins": {
-    "pathtocompiled": "_plugins/out",
-    "pathtocode": "_plugins/main",
+    "pathtocompiled": "_plugins/out/",
+    "pathtocode": "_plugins/main/",
     "names": ["entry", "anotherentry"]
   }
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"strconv"
 
 	"github.com/codegangsta/negroni"
@@ -10,28 +9,12 @@ import (
 	"github.com/krhancoc/frud/config"
 	"github.com/krhancoc/frud/database"
 	"github.com/krhancoc/frud/middleware"
+	"github.com/krhancoc/frud/plug"
 	"github.com/unrolled/render"
 	"github.com/unrolled/secure"
 )
 
 // Crud endpoint
-type Crud interface {
-	Get(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	// Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	// Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	// Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	GetName() string
-	GetDescription() string
-	GetPath() string
-}
-
-type HandlerFunc func(http.ResponseWriter, *http.Request, config.AppContext)
-
-func MakeHandler(ctx config.AppContext, fn HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fn(w, r, ctx)
-	}
-}
 
 // StartServer Wraps the mux Router and uses the Negroni Middleware
 func StartServer(path string) {
@@ -53,11 +36,15 @@ func StartServer(path string) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(mux.MiddlewareFunc(middleware.Converter))
 
-	// Import the package
-	for _, plug := range conf.Plugins {
-		ApplyPlugin(plug, router, ctx)
+	plugManager, err := plug.CreatePlugManager(conf.Plugins)
+	if err != nil {
+		panic(err)
 	}
-	// security
+	err = plugManager.AttachRoutes(router, ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	isDevelopment := true
 
 	secureMiddleware := secure.New(secure.Options{

@@ -26,9 +26,9 @@ func MakeHandler(ctx config.AppContext, fn HandlerFunc) http.HandlerFunc {
 
 type Crud interface {
 	Get(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	// Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	// Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	// Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+	Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+	Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
+	Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
 }
 
 type PlugManager struct {
@@ -125,33 +125,37 @@ func CreatePlugManager(conf *config.PlugConfig) (*PlugManager, error) {
 	return plugManager, nil
 }
 
+// AttachRoutes to your router!!
 func (manager *PlugManager) AttachRoutes(router *mux.Router, ctx config.AppContext) error {
 
 	color.Cyan("Attaching routes...")
+	println()
 	for _, plug := range manager.Plugs {
 
-		println()
-
-		color.Yellow("Plugin %s", plug.Name)
+		color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
 		color.Yellow("---------------------")
-		unimplimented := plug.CheckUnimplimented()
+		unimplimented := plug.CheckUnimplimented((*Crud)(nil))
 		if len(unimplimented) > 0 {
 			return fmt.Errorf("Plug: %s, unimplimented - %s", plug.Name, strings.Join(unimplimented, ","))
 		}
 		inter := (*plug.Main).(Crud)
-		methods := []string{"Get"}
-		for _, method := range methods {
+		methods := map[string]HandlerFunc{
+			"Get":    inter.Get,
+			"Post":   inter.Post,
+			"Put":    inter.Put,
+			"Delete": inter.Delete,
+		}
+		for method, f := range methods {
 			var handler http.Handler
-			println()
-			color.Blue("Attaching Endpoints from plugins: ")
-			handler = MakeHandler(ctx, inter.Get)
+			handler = MakeHandler(ctx, f)
 			router.
 				Methods(method).
 				Path(plug.EntryPoint).
 				Name(plug.Name).
 				Handler(handler)
-			color.Green("%s -- %s -- %s : %s", plug.Name, method, plug.EntryPoint, plug.Description)
+			color.Green("%s -- %s -- %s", plug.Name, method, plug.EntryPoint)
 		}
+		println("\n")
 	}
 	return nil
 }

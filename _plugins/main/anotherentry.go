@@ -27,6 +27,18 @@ func (*AnotherEntryEndpoint) Get(w http.ResponseWriter, req *http.Request, ctx c
 	ctx.Render.Text(w, 200, "ANOTHER HELLO")
 }
 
+func (*AnotherEntryEndpoint) Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext) {
+	ctx.Render.Text(w, 200, "ANOTHER HELLO")
+}
+
+func (*AnotherEntryEndpoint) Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext) {
+	ctx.Render.Text(w, 200, "ANOTHER HELLO")
+}
+
+func (*AnotherEntryEndpoint) Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext) {
+	ctx.Render.Text(w, 200, "ANOTHER HELLO")
+}
+
 func (e *AnotherEntryEndpoint) GetName() string {
 	return e.Name
 }

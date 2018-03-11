@@ -1,18 +1,8 @@
 package plug
 
 import (
-	"net/http"
-
-	"github.com/krhancoc/frud/config"
+	"reflect"
 )
-
-type get interface {
-	Get(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-}
-
-type put interface {
-	Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-}
 
 type getName interface {
 	GetName() string
@@ -28,30 +18,29 @@ type getPath interface {
 
 func CheckDefinition(o interface{}) []string {
 	var unimplemented []string
-	_, ok := o.(getName)
-	if !ok {
-		unimplemented = append(unimplemented, "GetName")
-	}
-	_, ok = o.(getDescription)
-	if !ok {
-		unimplemented = append(unimplemented, "GetDescription")
-	}
-	_, ok = o.(getName)
-	if !ok {
-		unimplemented = append(unimplemented, "GetName")
+	t := reflect.TypeOf((*Definition)(nil)).Elem()
+	for i := 0; i < t.NumMethod(); i++ {
+		f := t.Method(i).Name
+		check := reflect.TypeOf(o)
+		_, ok := check.MethodByName(f)
+		if !ok {
+			unimplemented = append(unimplemented, f)
+		}
 	}
 	return unimplemented
 }
 
-func (plug *Plug) CheckUnimplimented() []string {
+func (plug *Plug) CheckUnimplimented(i interface{}) []string {
+
 	var unimplemented []string
-	_, ok := (*plug.Main).(get)
-	if !ok {
-		unimplemented = append(unimplemented, "get")
+	t := reflect.TypeOf(i).Elem()
+	for i := 0; i < t.NumMethod(); i++ {
+		f := t.Method(i).Name
+		check := reflect.TypeOf(*plug.Main)
+		_, ok := check.MethodByName(f)
+		if !ok {
+			unimplemented = append(unimplemented, f)
+		}
 	}
-	// _, ok = (*plug.Main).(put)
-	// if !ok {
-	// 	unimplemented = append(unimplemented, "put")
-	// }
 	return unimplemented
 }

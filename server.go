@@ -36,7 +36,7 @@ func StartServer(path string) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(mux.MiddlewareFunc(middleware.Converter))
 
-	plugManager, err := plug.CreatePlugManager(conf.Plugins)
+	plugManager, err := plug.CreatePlugManager(conf.Manager)
 	if err != nil {
 		panic(err)
 	}
@@ -44,7 +44,10 @@ func StartServer(path string) {
 	if err != nil {
 		panic(err)
 	}
-
+	err = plugManager.InitGenericRoutes(router, conf.Manager)
+	if err != nil {
+		panic(err)
+	}
 	isDevelopment := true
 
 	secureMiddleware := secure.New(secure.Options{

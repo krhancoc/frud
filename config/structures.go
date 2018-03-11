@@ -7,9 +7,14 @@ import (
 
 // Configuration object that acts as the parent to others
 type Configuration struct {
-	Context  *Context    `json:"context"`
-	Database *Database   `json:"database"`
-	Plugins  *PlugConfig `json:"plugins"`
+	Context  *Context       `json:"context"`
+	Database *Database      `json:"database"`
+	Manager  *ManagerConfig `json:"manager"`
+}
+
+type ManagerConfig struct {
+	Generics []string    `json:"generics"`
+	Plugs    *PlugConfig `json:"plugins"`
 }
 
 type PlugConfig struct {

@@ -10,9 +10,12 @@
     "user": "neo4j",
     "password": "secret"
   },
-  "plugins": {
-    "pathtocompiled": "_plugins/out/",
-    "pathtocode": "_plugins/main/",
-    "names": ["entry", "anotherentry"]
+  "manager": {
+    "generics": ["healthcheck"],
+    "plugins": {
+      "pathtocompiled": "_plugins/out/",
+      "pathtocode": "_plugins/main/",
+      "names": ["entry", "anotherentry"]
+    }
   }
 }

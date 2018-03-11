@@ -24,6 +24,7 @@ func MakeHandler(ctx config.AppContext, fn HandlerFunc) http.HandlerFunc {
 	}
 }
 
+// Crud interface for the functions required by our API objects
 type Crud interface {
 	Get(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
 	Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
@@ -31,10 +32,12 @@ type Crud interface {
 	Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
 }
 
-type PlugManager struct {
+// PlugManager object to hold our plugins
+type Manager struct {
 	Plugs []*Plug
 }
 
+// Plug object to hold each plugin
 type Plug struct {
 	Name        string
 	Description string
@@ -80,14 +83,14 @@ func isPlugin(o types.Object) bool {
 }
 
 // CreatePlugManager creates the manager object for Plugins
-func CreatePlugManager(conf *config.PlugConfig) (*PlugManager, error) {
+func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 
-	var plugManager *PlugManager
+	var plugManager *Manager
 	var plugs []*Plug
 
-	for _, plug := range conf.Names {
+	for _, plug := range conf.Plugs.Names {
 
-		p, pkg, err := plugPack(plug, conf)
+		p, pkg, err := plugPack(plug, conf.Plugs)
 		if err != nil {
 			return plugManager, err
 		}
@@ -119,14 +122,14 @@ func CreatePlugManager(conf *config.PlugConfig) (*PlugManager, error) {
 		}
 	}
 	println()
-	plugManager = &PlugManager{
+	plugManager = &Manager{
 		Plugs: plugs,
 	}
 	return plugManager, nil
 }
 
 // AttachRoutes to your router!!
-func (manager *PlugManager) AttachRoutes(router *mux.Router, ctx config.AppContext) error {
+func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) error {
 
 	color.Cyan("Attaching routes...")
 	println()
@@ -156,6 +159,19 @@ func (manager *PlugManager) AttachRoutes(router *mux.Router, ctx config.AppConte
 			color.Green("%s -- %s -- %s", plug.Name, method, plug.EntryPoint)
 		}
 		println("\n")
+	}
+	return nil
+}
+
+func (*Manager) InitGenericRoutes(router *mux.Router, conf *config.ManagerConfig) error {
+
+	for _, generic := range conf.Generics {
+		switch generic {
+		case "healthcheck":
+			println(generic)
+		case "login":
+			println(generic)
+		}
 	}
 	return nil
 }

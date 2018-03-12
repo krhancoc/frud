@@ -52,6 +52,11 @@ type Definition interface {
 	GetDescription() string
 }
 
+type Endpoint interface {
+	Crud
+	Definition
+}
+
 func getImportString(conf *config.PlugConfig) string {
 
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -104,10 +109,12 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 				if err != nil {
 					continue
 				}
-				unimplimented := CheckDefinition(obj)
+
+				unimplimented := CheckUnimplimented(obj, (*Endpoint)(nil))
 				if len(unimplimented) > 0 {
 					return plugManager, fmt.Errorf("Unimplemented definition functions in - %s, %s", name, strings.Join(unimplimented, ","))
 				}
+
 				inter := obj.(Definition)
 				thisPlug := Plug{
 					Name:        inter.GetName(),
@@ -134,13 +141,8 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 	color.Cyan("Attaching routes...")
 	println()
 	for _, plug := range manager.Plugs {
-
 		color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
 		color.Yellow("---------------------")
-		unimplimented := plug.CheckUnimplimented((*Crud)(nil))
-		if len(unimplimented) > 0 {
-			return fmt.Errorf("Plug: %s, unimplimented - %s", plug.Name, strings.Join(unimplimented, ","))
-		}
 		inter := (*plug.Main).(Crud)
 		methods := map[string]HandlerFunc{
 			"Get":    inter.Get,
@@ -163,12 +165,16 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 	return nil
 }
 
-func (*Manager) InitGenericRoutes(router *mux.Router, conf *config.ManagerConfig) error {
+func (*Manager) InitGenericRoutes(router *mux.Router, conf *config.ManagerConfig, ctx config.AppContext) error {
 
 	for _, generic := range conf.Generics {
 		switch generic {
 		case "healthcheck":
-			println(generic)
+			router.
+				Methods("Get").
+				Path("/health").
+				Name("Health Check").
+				Handler(MakeHandler(ctx, HealthCheck))
 		case "login":
 			println(generic)
 		}

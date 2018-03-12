@@ -44,7 +44,7 @@ func StartServer(path string) {
 	if err != nil {
 		panic(err)
 	}
-	err = plugManager.InitGenericRoutes(router, conf.Manager)
+	err = plugManager.InitGenericRoutes(router, conf.Manager, ctx)
 	if err != nil {
 		panic(err)
 	}

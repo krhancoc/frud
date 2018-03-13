@@ -4,9 +4,16 @@ import (
 	"github.com/unrolled/render"
 )
 
+type DBRequest struct {
+	Method string
+	Values map[string]string
+	Type   string
+	Model  []*Field
+}
+
 type Driver interface {
 	Connect() interface{}
-	MakeRequest(string, map[string]string, []*Field) error
+	MakeRequest(*DBRequest) error
 }
 
 // Configuration object that acts as the parent to others

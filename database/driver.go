@@ -1,10 +1,8 @@
 package database
 
 import (
-	"fmt"
-	"log"
+	"strconv"
 
-	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 	"github.com/krhancoc/frud/config"
 )
 
@@ -20,27 +18,19 @@ func CreateDatabase(conf *config.Database) config.Driver {
 	}
 }
 
-type Neo struct {
-	Conf *config.Database
-}
-
-func (db *Neo) MakeRequest(method string, vals map[string]string, model []*config.Field) error {
-
-	println("Connecting to", db.Conf.Type, "DB")
-	conn := db.Connect().(bolt.Conn)
-	conn.Close()
-	println("Closing Connection to DB")
-
-	return nil
-}
-
-func (db *Neo) Connect() interface{} {
-	driver := bolt.NewDriver()
-	connection, err := driver.OpenNeo(fmt.Sprintf("bolt://%s:%s@%s:%d",
-		db.Conf.User, db.Conf.Password, db.Conf.Hostname, db.Conf.Port))
-	if err != nil {
-		log.Fatal(err)
-		panic(err)
+func Validate(vals map[string]string, fields []*config.Field) bool {
+	for _, field := range fields {
+		if val, ok := vals[field.Key]; ok {
+			switch field.ValueType {
+			case "int":
+				_, err := strconv.ParseInt(val, 10, 32)
+				if err != nil {
+					return false
+				}
+			default:
+				continue
+			}
+		}
 	}
-	return connection
+	return true
 }

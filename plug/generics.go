@@ -41,9 +41,15 @@ func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug 
 	m := map[string]string{
 		"name": "Entry",
 	}
-	err := ctx.Driver.MakeRequest("get", m, plug.Model)
+	dbReq := &config.DBRequest{
+		Method: "post",
+		Values: m,
+		Type:   plug.Name,
+		Model:  plug.Model,
+	}
+	err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
-		ctx.Render.Text(w, 500, "Problem writing to database")
+		ctx.Render.Text(w, 500, err.Error())
 	}
 	ctx.Render.Text(w, 200, "POST REQUEST")
 }

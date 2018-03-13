@@ -26,3 +26,31 @@ func HealthCheck(w http.ResponseWriter, req *http.Request, ctx config.AppContext
 type Generic struct {
 	Data interface{} `json:"data"`
 }
+
+type genericHandler func(http.ResponseWriter, *http.Request, config.AppContext, Plug)
+
+func makeGenericHandler(ctx config.AppContext, plug Plug, fn genericHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fn(w, r, ctx, plug)
+	}
+}
+
+func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+
+	ctx.Render.JSON(w, 200, plug)
+}
+
+func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+
+	ctx.Render.Text(w, 200, "HELLO")
+}
+
+func delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+
+	ctx.Render.Text(w, 200, "HELLO")
+}
+
+func put(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+
+	ctx.Render.Text(w, 200, "HELLO")
+}

@@ -1,15 +1,10 @@
 package plug
 
 import (
-	"go/types"
 	"net/http"
 
 	"github.com/krhancoc/frud/config"
 )
-
-type Model struct {
-	Data interface{}
-}
 
 // Manager object to hold our plugins
 type Manager struct {
@@ -20,10 +15,9 @@ type Manager struct {
 type Plug struct {
 	Name        string
 	Description string
-	EntryPoint  string
-	Package     *types.Package
+	Path        string
 	Crud        *Crud
-	Model       map[string](func(map[string]string) interface{})
+	Model       map[string]string
 }
 
 // Crud interface for the functions required by our API objects
@@ -32,21 +26,6 @@ type Crud interface {
 	Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
 	Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
 	Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-}
-
-// Definition interface for plugins so they can describe themselves
-type definition interface {
-	GetName() string
-	GetPath() string
-	GetDescription() string
-}
-
-// Endpoint interface is the wrapper for functionality and definition.  Splitting them up
-// for now as I will want to add Default handlers for Get, Put, Delete, Post functions in
-// case users do not want to make their own.
-type endpoint interface {
-	Crud
-	definition
 }
 
 type modelFunctions interface {

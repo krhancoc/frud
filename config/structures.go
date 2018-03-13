@@ -13,14 +13,22 @@ type Configuration struct {
 }
 
 type ManagerConfig struct {
-	Generics []string    `json:"generics"`
-	Plugs    *PlugConfig `json:"plugins"`
+	Generics []string      `json:"generics"`
+	Plugs    []*PlugConfig `json:"plugins"`
 }
 
 type PlugConfig struct {
 	PathToCode     string   `json:"pathtocode,omitempty"`
 	PathToCompiled string   `json:"pathtocompiled,omitempty"`
-	Names          []string `json:"names"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	Path           string   `json:"path,omitempty"`
+	Model          []*Field `json:"model,omitempty"`
+}
+
+type Field struct {
+	Key       string `json:"key"`
+	ValueType string `json:"value_type"`
 }
 
 // Context of the server itself
@@ -48,5 +56,7 @@ type AppContext struct {
 }
 
 type Endpoint struct {
-	Name string `json:"name"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Path        string `json:"path"`
 }

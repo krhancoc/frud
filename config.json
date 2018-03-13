@@ -12,10 +12,28 @@
   },
   "manager": {
     "generics": ["healthcheck"],
-    "plugins": {
-      "pathtocompiled": "_plugins/out/",
-      "pathtocode": "_plugins/main/",
-      "names": ["entry", "anotherentry", "modelonly"]
-    }
+    "plugins": [
+      {
+        "name": "entry",
+        "pathtocompiled": "_plugins/out/",
+        "pathtocode": "_plugins/main/"
+      },
+      {
+        "name": "modelonly",
+        "path": "/modelonly",
+        "description": "Model only endpoint",
+        "model": [
+          { 
+            "key": "id",
+            "value_type": "string"
+          },
+          {
+            "key": "name",
+            "value_type": "string"
+          }
+
+        ]
+      }
+    ]
   }
 }

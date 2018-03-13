@@ -35,44 +35,32 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 	color.Cyan("Attaching routes...")
 	println()
 	for _, plug := range manager.Plugs {
+		color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
+		color.Yellow("---------------------")
+		var methods map[string]http.HandlerFunc
 		if plug.Crud != nil {
-			color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
-			color.Yellow("---------------------")
 			inter := *plug.Crud
-			methods := map[string]HandlerFunc{
-				"Get":    inter.Get,
-				"Post":   inter.Post,
-				"Put":    inter.Put,
-				"Delete": inter.Delete,
+			methods = map[string]http.HandlerFunc{
+				"Get":    MakeHandler(ctx, inter.Get),
+				"Post":   MakeHandler(ctx, inter.Post),
+				"Put":    MakeHandler(ctx, inter.Put),
+				"Delete": MakeHandler(ctx, inter.Delete),
 			}
-			for method, f := range methods {
-				var handler http.Handler
-				handler = MakeHandler(ctx, f)
-				router.
-					Methods(method).
-					Path(plug.Path).
-					Name(plug.Name).
-					Handler(handler)
-				color.Green("%s -- %s -- %s", plug.Name, method, plug.Path)
-			}
-			println("\n")
 		} else {
-			color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
-			color.Yellow("---------------------")
-			methods := map[string]http.HandlerFunc{
+			methods = map[string]http.HandlerFunc{
 				"Get":    makeGenericHandler(ctx, *plug, get),
 				"Post":   makeGenericHandler(ctx, *plug, post),
 				"Delete": makeGenericHandler(ctx, *plug, delete),
 				"Put":    makeGenericHandler(ctx, *plug, put),
 			}
-			for method, f := range methods {
-				router.
-					Methods(method).
-					Path(plug.Path).
-					Name(plug.Name).
-					Handler(f)
-				color.Green("%s -- %s -- %s", plug.Name, method, plug.Path)
-			}
+		}
+		for method, f := range methods {
+			router.
+				Methods(method).
+				Path(plug.Path).
+				Name(plug.Name).
+				Handler(f)
+			color.Green("%s -- %s -- %s", plug.Name, method, plug.Path)
 		}
 	}
 	return nil

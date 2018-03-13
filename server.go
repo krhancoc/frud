@@ -21,15 +21,14 @@ func StartServer(path string) {
 
 	// Load up database
 	conf := config.LoadConfig(path)
-	connect := database.Connect(conf.Database)
-	defer connect.Close()
+	db := database.CreateDatabase(conf.Database)
 
 	// Create App context
 	ctx := config.AppContext{
-		Connection: &connect,
-		Render:     render.New(),
-		Version:    conf.Context.Version,
-		Port:       strconv.Itoa(conf.Context.Port),
+		Driver:  db.(config.Driver),
+		Render:  render.New(),
+		Version: conf.Context.Version,
+		Port:    strconv.Itoa(conf.Context.Port),
 	}
 
 	//Instantiate middleware

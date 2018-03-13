@@ -15,9 +15,6 @@ import (
 	"github.com/krhancoc/frud/config"
 )
 
-// CheckUnimplimented will check if interface obj has all the functions asked for by i, it will then
-// output a list of the functions not implimented.
-// Please note that obj has to be a pointer to the struct in question and not the struct object itself.
 func checkUnimplimented(obj interface{}, i interface{}) []string {
 	var unimplemented []string
 	t := reflect.TypeOf(i).Elem()
@@ -87,22 +84,13 @@ func createPlug(conf *config.PlugConfig) (*Plug, error) {
 	return createPlugFromModel(conf)
 }
 
-func modelMap(conf *config.PlugConfig) map[string]string {
-
-	m := make(map[string]string, len(conf.Model))
-	for _, field := range conf.Model {
-		m[field.Key] = field.ValueType
-	}
-	return m
-}
-
 func createPlugFromModel(conf *config.PlugConfig) (*Plug, error) {
 	color.Yellow("Plugin found using Model Method - %s", conf.Name)
 	thisPlug := &Plug{
 		Name:        conf.Name,
 		Description: conf.Description,
 		Path:        conf.Path,
-		Model:       modelMap(conf),
+		Model:       conf.Model,
 		Crud:        nil,
 	}
 	return thisPlug, nil

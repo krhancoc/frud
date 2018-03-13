@@ -17,7 +17,7 @@ type Plug struct {
 	Description string
 	Path        string
 	Crud        *Crud
-	Model       map[string]string
+	Model       []*config.Field
 }
 
 // Crud interface for the functions required by our API objects

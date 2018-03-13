@@ -1,9 +1,13 @@
 package config
 
 import (
-	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 	"github.com/unrolled/render"
 )
+
+type Driver interface {
+	Connect() interface{}
+	MakeRequest(string, map[string]string, []*Field) error
+}
 
 // Configuration object that acts as the parent to others
 type Configuration struct {
@@ -49,10 +53,10 @@ type Database struct {
 // AppContext is the structure that holds the current context of the app
 // will be passed in the handlers
 type AppContext struct {
-	Connection *bolt.Conn
-	Render     *render.Render
-	Version    string
-	Port       string
+	Driver  Driver
+	Render  *render.Render
+	Version string
+	Port    string
 }
 
 type Endpoint struct {

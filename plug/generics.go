@@ -23,10 +23,6 @@ func HealthCheck(w http.ResponseWriter, req *http.Request, ctx config.AppContext
 	})
 }
 
-type Generic struct {
-	Data interface{} `json:"data"`
-}
-
 type genericHandler func(http.ResponseWriter, *http.Request, config.AppContext, Plug)
 
 func makeGenericHandler(ctx config.AppContext, plug Plug, fn genericHandler) http.HandlerFunc {
@@ -42,7 +38,14 @@ func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug P
 
 func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
 
-	ctx.Render.Text(w, 200, "HELLO")
+	m := map[string]string{
+		"name": "Entry",
+	}
+	err := ctx.Driver.MakeRequest("get", m, plug.Model)
+	if err != nil {
+		ctx.Render.Text(w, 500, "Problem writing to database")
+	}
+	ctx.Render.Text(w, 200, "POST REQUEST")
 }
 
 func delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {

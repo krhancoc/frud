@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-func CreatePlug() Plug {
+func createPlug(name string) Plug {
 	return Plug{
-		Name:        "",
-		Description: "",
-		EntryPoint:  "",
+		Name:        name,
+		Description: "Default description " + name,
+		EntryPoint:  "/" + name,
 		Crud:        nil,
 		Model:       nil,
 	}
@@ -20,7 +20,7 @@ func CreatePlug() Plug {
 // CheckUnimplimented will check if interface obj has all the functions asked for by i, it will then
 // output a list of the functions not implimented.
 // Please note that obj has to be a pointer to the struct in question and not the struct object itself.
-func CheckUnimplimented(obj interface{}, i interface{}) []string {
+func checkUnimplimented(obj interface{}, i interface{}) []string {
 	var unimplemented []string
 	t := reflect.TypeOf(i).Elem()
 	for i := 0; i < t.NumMethod(); i++ {
@@ -34,26 +34,20 @@ func CheckUnimplimented(obj interface{}, i interface{}) []string {
 	return unimplemented
 }
 
-func (w *Plug) SetDefinition(name string, obj interface{}) error {
-	unimplimented := CheckUnimplimented(obj, (*Definition)(nil))
+func (w *Plug) setDefinition(name string, obj interface{}) error {
+	unimplimented := checkUnimplimented(obj, (*definition)(nil))
 	if len(unimplimented) > 0 {
 		return fmt.Errorf("Unimplemented definition functions in - %s, %s", name, strings.Join(unimplimented, ","))
 	}
-	inter := obj.(Definition)
+	inter := obj.(definition)
 	w.Description = inter.GetDescription()
 	w.Name = inter.GetName()
 	w.EntryPoint = inter.GetPath()
 	return nil
 }
 
-func (w *Plug) SetDefaultDefinition(name string) {
-	w.Name = name
-	w.Description = "Default " + name
-	w.EntryPoint = "/" + name
-}
-
-func (w *Plug) SetCrud(name string, obj interface{}) []string {
-	unimplimented := CheckUnimplimented(obj, (*Crud)(nil))
+func (w *Plug) setCrud(name string, obj interface{}) []string {
+	unimplimented := checkUnimplimented(obj, (*Crud)(nil))
 	if len(unimplimented) > 0 {
 		w.Crud = nil
 		return unimplimented
@@ -63,7 +57,7 @@ func (w *Plug) SetCrud(name string, obj interface{}) []string {
 	return unimplimented
 }
 
-func (w *Plug) SetModel(p *plugin.Plugin) []string {
+func (w *Plug) setModel(p *plugin.Plugin) []string {
 
 	// Check for Models
 	expected := []string{"Create", "Modify", "Delete", "Read"}
@@ -79,9 +73,7 @@ func (w *Plug) SetModel(p *plugin.Plugin) []string {
 	}
 	if len(missing) > 0 {
 		return missing
-	} else {
-		w.Model = m
-		return missing
 	}
-
+	w.Model = m
+	return missing
 }

@@ -35,7 +35,7 @@ type Crud interface {
 }
 
 // Definition interface for plugins so they can describe themselves
-type Definition interface {
+type definition interface {
 	GetName() string
 	GetPath() string
 	GetDescription() string
@@ -44,12 +44,12 @@ type Definition interface {
 // Endpoint interface is the wrapper for functionality and definition.  Splitting them up
 // for now as I will want to add Default handlers for Get, Put, Delete, Post functions in
 // case users do not want to make their own.
-type Endpoint interface {
+type endpoint interface {
 	Crud
-	Definition
+	definition
 }
 
-type ModelFunctions interface {
+type modelFunctions interface {
 	Get(i interface{}) string
 	Put(i interface{}) string
 	Delete(i interface{}) string

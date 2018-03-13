@@ -56,7 +56,7 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 
 		var unimplemented []string
 
-		thisPlug := CreatePlug()
+		thisPlug := createPlug(plug)
 		modelFound := false
 		handlerFound := false
 
@@ -65,7 +65,7 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 			return plugManager, err
 		}
 
-		missing := thisPlug.SetModel(p)
+		missing := thisPlug.setModel(p)
 		if len(missing) == 0 {
 			modelFound = true
 		}
@@ -78,11 +78,11 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 				if err != nil {
 					continue
 				}
-				err = thisPlug.SetDefinition(name, obj)
+				err = thisPlug.setDefinition(name, obj)
 				if err != nil {
 					return plugManager, err
 				}
-				unimplemented = thisPlug.SetCrud(name, obj)
+				unimplemented = thisPlug.setCrud(name, obj)
 				if len(unimplemented) == 0 {
 					handlerFound = true
 				}
@@ -90,15 +90,12 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 			}
 		}
 
-		if thisPlug.Name == "" {
-			thisPlug.SetDefaultDefinition(plug)
-		}
-
 		if !modelFound && !handlerFound {
 			return plugManager, fmt.Errorf(`
 				%s: Requires a Model implementation or CRUD implementation.
-				Missing Model Functions: %s
-				`, plug, strings.Join(missing, ","))
+				Missing Model Functions: %s,
+				Missing Crud functions : %s
+				`, plug, strings.Join(missing, ","), strings.Join(unimplemented, ","))
 		} else if handlerFound {
 			color.Yellow("Plugin found using Handler Method - %s: %s", thisPlug.Name, thisPlug.Description)
 		} else if modelFound {

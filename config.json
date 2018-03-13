@@ -15,7 +15,7 @@
     "plugins": {
       "pathtocompiled": "_plugins/out/",
       "pathtocode": "_plugins/main/",
-      "names": ["entry", "anotherentry"]
+      "names": ["entry", "anotherentry", "modelonly"]
     }
   }
 }

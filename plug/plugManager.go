@@ -16,47 +16,6 @@ import (
 	"github.com/krhancoc/frud/config"
 )
 
-type HandlerFunc func(http.ResponseWriter, *http.Request, config.AppContext)
-
-func MakeHandler(ctx config.AppContext, fn HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fn(w, r, ctx)
-	}
-}
-
-// Crud interface for the functions required by our API objects
-type Crud interface {
-	Get(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	Put(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	Delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-	Post(w http.ResponseWriter, req *http.Request, ctx config.AppContext)
-}
-
-// PlugManager object to hold our plugins
-type Manager struct {
-	Plugs []*Plug
-}
-
-// Plug object to hold each plugin
-type Plug struct {
-	Name        string
-	Description string
-	EntryPoint  string
-	Package     *types.Package
-	Main        *plugin.Symbol
-}
-
-type Definition interface {
-	GetName() string
-	GetPath() string
-	GetDescription() string
-}
-
-type Endpoint interface {
-	Crud
-	Definition
-}
-
 func getImportString(conf *config.PlugConfig) string {
 
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
@@ -68,7 +27,7 @@ func getImportString(conf *config.PlugConfig) string {
 
 func plugPack(plug string, conf *config.PlugConfig) (*plugin.Plugin, *types.Package, error) {
 
-	importString := getImportString(conf)
+	importString := getImportString(conf) + plug
 	p, err := plugin.Open(conf.PathToCompiled + plug + ".so")
 	if err != nil {
 		return nil, nil, err
@@ -95,12 +54,22 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 
 	for _, plug := range conf.Plugs.Names {
 
+		var unimplemented []string
+
+		thisPlug := CreatePlug()
+		modelFound := false
+		handlerFound := false
+
 		p, pkg, err := plugPack(plug, conf.Plugs)
 		if err != nil {
 			return plugManager, err
 		}
 
-		// Get Package Definition
+		missing := thisPlug.SetModel(p)
+		if len(missing) == 0 {
+			modelFound = true
+		}
+		// Check for Handlers
 		for _, name := range pkg.Scope().Names() {
 			definition := pkg.Scope().Lookup(name)
 			// Check for structure
@@ -109,24 +78,33 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 				if err != nil {
 					continue
 				}
-
-				unimplimented := CheckUnimplimented(obj, (*Endpoint)(nil))
-				if len(unimplimented) > 0 {
-					return plugManager, fmt.Errorf("Unimplemented definition functions in - %s, %s", name, strings.Join(unimplimented, ","))
+				err = thisPlug.SetDefinition(name, obj)
+				if err != nil {
+					return plugManager, err
 				}
-
-				inter := obj.(Definition)
-				thisPlug := Plug{
-					Name:        inter.GetName(),
-					Description: inter.GetDescription(),
-					EntryPoint:  inter.GetPath(),
-					Package:     pkg,
-					Main:        &obj,
+				unimplemented = thisPlug.SetCrud(name, obj)
+				if len(unimplemented) == 0 {
+					handlerFound = true
 				}
-				color.Yellow("Plugin found - %s: %s", thisPlug.Name, thisPlug.Description)
 				plugs = append(plugs, &thisPlug)
 			}
 		}
+
+		if thisPlug.Name == "" {
+			thisPlug.SetDefaultDefinition(plug)
+		}
+
+		if !modelFound && !handlerFound {
+			return plugManager, fmt.Errorf(`
+				%s: Requires a Model implementation or CRUD implementation.
+				Missing Model Functions: %s
+				`, plug, strings.Join(missing, ","))
+		} else if handlerFound {
+			color.Yellow("Plugin found using Handler Method - %s: %s", thisPlug.Name, thisPlug.Description)
+		} else if modelFound {
+			color.Yellow("Plugin found using Model Method - %s: %s", thisPlug.Name, thisPlug.Description)
+		}
+
 	}
 	println()
 	plugManager = &Manager{
@@ -143,24 +121,26 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 	for _, plug := range manager.Plugs {
 		color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
 		color.Yellow("---------------------")
-		inter := (*plug.Main).(Crud)
-		methods := map[string]HandlerFunc{
-			"Get":    inter.Get,
-			"Post":   inter.Post,
-			"Put":    inter.Put,
-			"Delete": inter.Delete,
+		inter := *plug.Crud
+		if inter != nil {
+			methods := map[string]HandlerFunc{
+				"Get":    inter.Get,
+				"Post":   inter.Post,
+				"Put":    inter.Put,
+				"Delete": inter.Delete,
+			}
+			for method, f := range methods {
+				var handler http.Handler
+				handler = MakeHandler(ctx, f)
+				router.
+					Methods(method).
+					Path(plug.EntryPoint).
+					Name(plug.Name).
+					Handler(handler)
+				color.Green("%s -- %s -- %s", plug.Name, method, plug.EntryPoint)
+			}
+			println("\n")
 		}
-		for method, f := range methods {
-			var handler http.Handler
-			handler = MakeHandler(ctx, f)
-			router.
-				Methods(method).
-				Path(plug.EntryPoint).
-				Name(plug.Name).
-				Handler(handler)
-			color.Green("%s -- %s -- %s", plug.Name, method, plug.EntryPoint)
-		}
-		println("\n")
 	}
 	return nil
 }

@@ -22,3 +22,7 @@ func HealthCheck(w http.ResponseWriter, req *http.Request, ctx config.AppContext
 		Version: ctx.Version,
 	})
 }
+
+type Generic struct {
+	Data interface{} `json:"data"`
+}

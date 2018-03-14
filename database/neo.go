@@ -40,10 +40,8 @@ func (db *Neo) MakeRequest(req *config.DBRequest) error {
 	switch req.Method {
 	case "post":
 		if Validate(req.Values, req.Model) {
-			stmt := fmt.Sprintf(`
-			CREATE (n: %s {
-				%s
-			})`, req.Type, makeValStmt(req.Values, req.Model))
+			stmt := fmt.Sprintf(`CREATE (n: %s { %s })`, req.Type, makeValStmt(req.Values, req.Model))
+			println(stmt)
 			stmtPrepared, err := conn.PrepareNeo(stmt)
 			if err != nil {
 				return err

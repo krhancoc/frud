@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"os"
 	"strconv"
 
 	"github.com/codegangsta/negroni"
@@ -10,16 +10,22 @@ import (
 	"github.com/krhancoc/frud/database"
 	"github.com/krhancoc/frud/middleware"
 	"github.com/krhancoc/frud/plug"
+	log "github.com/sirupsen/logrus"
 	"github.com/unrolled/render"
 	"github.com/unrolled/secure"
 )
 
-// Crud endpoint
+func init() {
+	log.SetFormatter(&log.TextFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
+}
 
 // StartServer Wraps the mux Router and uses the Negroni Middleware
 func StartServer(path string) {
-
+	//Load up Logger
 	// Load up database
+	log.Info("Setting up database")
 	conf := config.LoadConfig(path)
 	db := database.CreateDatabase(conf.Database)
 
@@ -35,10 +41,12 @@ func StartServer(path string) {
 	router := mux.NewRouter().StrictSlash(true)
 	router.Use(mux.MiddlewareFunc(middleware.Converter))
 
+	log.Info("Creating Plugin Manager")
 	plugManager, err := plug.CreatePlugManager(conf.Manager)
 	if err != nil {
 		panic(err)
 	}
+	log.Info("Attaching Routes")
 	err = plugManager.AttachRoutes(router, ctx)
 	if err != nil {
 		panic(err)

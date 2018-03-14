@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/krhancoc/frud/config"
 	"github.com/krhancoc/frud/database"
@@ -35,12 +36,7 @@ func makeGenericHandler(ctx config.AppContext, plug Plug, fn genericHandler) htt
 	}
 }
 
-func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
-
-	ctx.Render.JSON(w, 200, plug)
-}
-
-func toVal(b []byte) map[string]string {
+func paramsToVal(b []byte) map[string]string {
 
 	var objmap map[string]*json.RawMessage
 	json.Unmarshal(b, &objmap)
@@ -54,15 +50,52 @@ func toVal(b []byte) map[string]string {
 
 }
 
+func queryToVal(q url.Values, plugs []*config.Field) map[string]string {
+
+	vals := make(map[string]string, len(q))
+	for _, plug := range plugs {
+		if val := q.Get(plug.Key); val != "" {
+			vals[plug.Key] = val
+		}
+	}
+	return vals
+}
+
+func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+
+	m := queryToVal(req.URL.Query(), plug.Model)
+	log.WithFields(log.Fields{
+		"method": req.Method,
+		"object": plug.Name,
+		"query":  m,
+	}).Info("Post request received")
+
+	dbReq := &config.DBRequest{
+		Method: "get",
+		Values: m,
+		Type:   plug.Name,
+		Model:  plug.Model,
+	}
+	result, err := ctx.Driver.MakeRequest(dbReq)
+	if err != nil {
+		e := err.(database.DriverError)
+		log.Error(err.Error())
+		ctx.Render.JSON(w, e.Status, e)
+		return
+	}
+	ctx.Render.JSON(w, http.StatusAccepted, result)
+	return
+}
+
 func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
 
 	b, _ := ioutil.ReadAll(req.Body)
-	m := toVal(b)
+	m := paramsToVal(b)
 
 	log.WithFields(log.Fields{
 		"method": req.Method,
 		"object": plug.Name,
-		"query":  string(b),
+		"params": string(b),
 	}).Info("Post request received")
 
 	dbReq := &config.DBRequest{
@@ -71,7 +104,7 @@ func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug 
 		Type:   plug.Name,
 		Model:  plug.Model,
 	}
-	err := ctx.Driver.MakeRequest(dbReq)
+	_, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
 		e := err.(database.DriverError)
 		log.Error(err.Error())

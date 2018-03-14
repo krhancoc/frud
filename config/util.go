@@ -55,7 +55,21 @@ func validateModelMethod(conf *PlugConfig) error {
 }
 
 func validatePlugins(conf []*PlugConfig) error {
+
+	names := make(map[string]bool, len(conf))
+	paths := make(map[string]bool, len(conf))
 	for _, plug := range conf {
+
+		if _, ok := names[plug.Name]; ok {
+			return fmt.Errorf(`Duplicate name - %s`, plug.Name)
+		}
+		names[plug.Name] = true
+
+		if _, ok := names[plug.Path]; ok {
+			return fmt.Errorf(`Duplicate path - %s`, plug.Path)
+		}
+		paths[plug.Path] = true
+
 		if len(plug.Model) > 0 {
 			if err := validateModelMethod(plug); err != nil {
 				return err

@@ -13,7 +13,7 @@ type DBRequest struct {
 
 type Driver interface {
 	Connect() interface{}
-	MakeRequest(*DBRequest) error
+	MakeRequest(*DBRequest) (interface{}, error)
 	ConvertToDriverError(error) error
 }
 

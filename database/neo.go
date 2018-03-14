@@ -124,34 +124,45 @@ func (db Neo) ConvertToDriverError(err error) error {
 	return err
 }
 
-func (db *Neo) MakeRequest(req *config.DBRequest) error {
+func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 
 	log.WithFields(logHelper(req)).Info("Database request made")
 	conn := db.Connect().(bolt.Conn)
 	defer conn.Close()
 
-	switch req.Method {
-	case "post":
-		if Validate(req.Values, req.Model) {
-			stmt := fmt.Sprintf(`CREATE (n: %s { %s })`, req.Type, makeValStmt(req.Values, req.Model))
-			log.
-				WithField("statement", stmt).
-				WithFields(logHelper(req)).
-				Info("Statement created")
-			stmtPrepared, err := conn.PrepareNeo(stmt)
-			if err != nil {
-				return db.ConvertToDriverError(err)
-			}
-			_, err = stmtPrepared.ExecNeo(nil)
-			if err != nil {
-				return db.ConvertToDriverError(err)
-			}
-			return nil
-		}
-		return fmt.Errorf("Invalid request")
+	if !Validate(req.Values, req.Model) {
+		return "", fmt.Errorf("Invalid request")
 	}
 
-	return nil
+	var stmt string
+
+	switch req.Method {
+	case "post":
+		stmt = fmt.Sprintf(`CREATE (n: %s { %s })`, req.Type, makeValStmt(req.Values, req.Model))
+	case "get":
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Values, req.Model))
+	}
+	log.
+		WithField("statement", stmt).
+		WithFields(logHelper(req)).
+		Info("Statement created")
+
+	stmtPrepared, err := conn.PrepareNeo(stmt)
+	defer stmtPrepared.Close()
+
+	if err != nil {
+		return nil, db.ConvertToDriverError(err)
+	}
+	switch req.Method {
+	case "post":
+		_, err := stmtPrepared.ExecNeo(nil)
+		return nil, err
+	case "get":
+		result, err := stmtPrepared.QueryNeo(nil)
+		r, _, _ := result.All()
+		return r, err
+	}
+	return nil, nil
 }
 
 func (db *Neo) Connect() interface{} {

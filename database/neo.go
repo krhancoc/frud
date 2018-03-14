@@ -2,16 +2,103 @@ package database
 
 import (
 	"fmt"
-	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/johnnadratowski/golang-neo4j-bolt-driver/structures/messages"
+
 	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
+	"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
 	"github.com/krhancoc/frud/config"
+	log "github.com/sirupsen/logrus"
+)
+
+const (
+	ConstraintFailure = "Neo.ClientError.Schema.ConstraintValidationFailed"
 )
 
 type Neo struct {
-	Conf *config.Database
+	Conf    *config.Database
+	Plugins []*config.PlugConfig
+}
+
+type constraint struct {
+	Model string
+	Field string
+}
+
+func CreateNeo(conf config.Configuration) (config.Driver, error) {
+
+	var driver config.Driver
+	neo := &Neo{
+		Conf:    conf.Database,
+		Plugins: conf.Manager.Plugs,
+	}
+
+	err := neo.initModels()
+	if err != nil {
+		return driver, err
+	}
+	var temp interface{} = neo
+	driver = temp.(config.Driver)
+	return driver, err
+
+}
+func (db *Neo) createConstraints(cons []*constraint) error {
+	conn := db.Connect().(bolt.Conn)
+	defer conn.Close()
+	for _, c := range cons {
+		stmt := fmt.Sprintf(`CREATE CONSTRAINT ON (n:%s) ASSERT n.%s IS UNIQUE`, c.Model, c.Field)
+		log.WithFields(log.Fields{
+			"model":    c.Model,
+			"field":    c.Field,
+			"statment": stmt,
+		}).Info("Creating unique constraint")
+		n, err := conn.PrepareNeo(stmt)
+		if err != nil {
+			return err
+		}
+		_, err = n.ExecNeo(nil)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (db *Neo) initModels() error {
+
+	log.Infof("Validating models for neo4j database")
+	var constraints []*constraint
+	idFound := false
+	for _, plug := range db.Plugins {
+		if plug.Model != nil {
+			for _, field := range plug.Model {
+				for _, option := range field.Options {
+					if option == "id" {
+						if idFound {
+							return fmt.Errorf("Multiple id's found in model %s", plug.Name)
+						}
+						idFound = true
+						constraints = append(constraints, &constraint{
+							Model: plug.Name,
+							Field: field.Key,
+						})
+					}
+				}
+			}
+		}
+	}
+	return db.createConstraints(constraints)
+}
+
+func logHelper(req *config.DBRequest) log.Fields {
+	return map[string]interface{}{
+		"method": req.Method,
+		"type":   req.Type,
+		"values": req.Values,
+	}
 }
 
 func makeValStmt(vals map[string]string, model []*config.Field) string {
@@ -33,7 +120,7 @@ func makeValStmt(vals map[string]string, model []*config.Field) string {
 
 func (db *Neo) MakeRequest(req *config.DBRequest) error {
 
-	println("Connecting to", db.Conf.Type, "DB")
+	log.WithFields(logHelper(req)).Info("Database request made")
 	conn := db.Connect().(bolt.Conn)
 	defer conn.Close()
 
@@ -41,13 +128,24 @@ func (db *Neo) MakeRequest(req *config.DBRequest) error {
 	case "post":
 		if Validate(req.Values, req.Model) {
 			stmt := fmt.Sprintf(`CREATE (n: %s { %s })`, req.Type, makeValStmt(req.Values, req.Model))
-			println(stmt)
+			log.
+				WithField("statement", stmt).
+				WithFields(logHelper(req)).
+				Info("Statement created")
 			stmtPrepared, err := conn.PrepareNeo(stmt)
 			if err != nil {
 				return err
 			}
 			_, err = stmtPrepared.ExecNeo(nil)
 			if err != nil {
+				e := err.(*errors.Error).InnerMost().(messages.FailureMessage)
+				log.WithFields(e.Metadata).Infof("Attempted post failure")
+				if val, ok := e.Metadata["code"]; ok && val == ConstraintFailure {
+					return DriverError{
+						Status:  http.StatusConflict,
+						Message: "Action would violate constraint set by model",
+					}
+				}
 				return err
 			}
 			return nil

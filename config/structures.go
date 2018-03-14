@@ -38,8 +38,9 @@ type PlugConfig struct {
 }
 
 type Field struct {
-	Key       string `json:"key"`
-	ValueType string `json:"value_type"`
+	Key       string   `json:"key"`
+	ValueType string   `json:"value_type"`
+	Options   []string `json:"options,omitempty"`
 }
 
 // Context of the server itself

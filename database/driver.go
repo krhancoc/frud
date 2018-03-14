@@ -6,15 +6,12 @@ import (
 	"github.com/krhancoc/frud/config"
 )
 
-func CreateDatabase(conf *config.Database) config.Driver {
-	switch conf.Type {
+func CreateDatabase(conf config.Configuration) (config.Driver, error) {
+	switch conf.Database.Type {
 	case "neo4j":
-		var neo interface{} = &Neo{
-			Conf: conf,
-		}
-		return neo.(config.Driver)
+		return CreateNeo(conf)
 	default:
-		return nil
+		return nil, nil
 	}
 }
 

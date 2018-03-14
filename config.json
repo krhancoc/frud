@@ -23,15 +23,11 @@
         "path": "/modelonly",
         "description": "Model only endpoint",
         "model": [
-          { 
-            "key": "id",
-            "value_type": "string"
-          },
           {
             "key": "name",
-            "value_type": "string"
+            "value_type": "string",
+            "options": ["id"]
           }
-
         ]
       }
     ]

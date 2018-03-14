@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/krhancoc/frud/config"
+	"github.com/krhancoc/frud/database"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,39 +40,48 @@ func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug P
 	ctx.Render.JSON(w, 200, plug)
 }
 
-func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+func toVal(b []byte) map[string]string {
 
-	b, _ := ioutil.ReadAll(req.Body)
-	log.WithFields(log.Fields{
-		"method": req.Method,
-		"object": plug.Name,
-		"query":  string(b),
-	}).Info("Post request received")
 	var objmap map[string]*json.RawMessage
-	err := json.Unmarshal(b, &objmap)
-	if err != nil {
-		log.Error(err.Error())
-		return
-	}
+	json.Unmarshal(b, &objmap)
 
 	m := make(map[string]string, len(objmap))
 	for key, value := range objmap {
 		v := (*value)[1 : len(*value)-1]
 		m[key] = string(v)
 	}
+	return m
+
+}
+
+func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+
+	b, _ := ioutil.ReadAll(req.Body)
+	m := toVal(b)
+
+	log.WithFields(log.Fields{
+		"method": req.Method,
+		"object": plug.Name,
+		"query":  string(b),
+	}).Info("Post request received")
+
 	dbReq := &config.DBRequest{
 		Method: "post",
 		Values: m,
 		Type:   plug.Name,
 		Model:  plug.Model,
 	}
-	err = ctx.Driver.MakeRequest(dbReq)
+	err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
+		e := err.(database.DriverError)
 		log.Error(err.Error())
-		ctx.Render.Text(w, 500, err.Error())
+		ctx.Render.JSON(w, e.Status, e)
 		return
 	}
-	ctx.Render.Text(w, 200, "POST REQUEST")
+	ctx.Render.JSON(w, http.StatusCreated, Message{
+		Status:  http.StatusCreated,
+		Message: "Created",
+	})
 	return
 }
 

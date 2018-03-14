@@ -32,7 +32,6 @@ func CreatePlugManager(conf *config.ManagerConfig) (*Manager, error) {
 // AttachRoutes to your router!!
 func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) error {
 
-	color.Cyan("Attaching routes...")
 	println()
 	for _, plug := range manager.Plugs {
 		color.Yellow("Plugin %s: %s", plug.Name, plug.Description)

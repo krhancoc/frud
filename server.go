@@ -26,7 +26,10 @@ func StartServer(path string) {
 	//Load up Logger
 	// Load up database
 	log.Info("Setting up database")
-	conf := config.LoadConfig(path)
+	conf, err := config.LoadConfig(path)
+	if err != nil {
+		panic(err)
+	}
 	db, err := database.CreateDatabase(conf)
 	if err != nil {
 		panic(err)

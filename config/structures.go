@@ -14,6 +14,7 @@ type DBRequest struct {
 type Driver interface {
 	Connect() interface{}
 	MakeRequest(*DBRequest) error
+	ConvertToDriverError(error) error
 }
 
 // Configuration object that acts as the parent to others

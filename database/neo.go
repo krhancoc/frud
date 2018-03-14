@@ -69,27 +69,21 @@ func (db *Neo) createConstraints(cons []*constraint) error {
 
 func (db *Neo) initModels() error {
 
-	log.Infof("Validating models for neo4j database")
 	var constraints []*constraint
-	idFound := false
 	for _, plug := range db.Plugins {
-		if plug.Model != nil {
-			for _, field := range plug.Model {
-				for _, option := range field.Options {
-					if option == "id" {
-						if idFound {
-							return fmt.Errorf("Multiple id's found in model %s", plug.Name)
-						}
-						idFound = true
-						constraints = append(constraints, &constraint{
-							Model: plug.Name,
-							Field: field.Key,
-						})
-					}
+		for _, field := range plug.Model {
+			for _, option := range field.Options {
+				switch option {
+				case "id":
+					constraints = append(constraints, &constraint{
+						Model: plug.Name,
+						Field: field.Key,
+					})
 				}
 			}
 		}
 	}
+
 	return db.createConstraints(constraints)
 }
 
@@ -118,6 +112,18 @@ func makeValStmt(vals map[string]string, model []*config.Field) string {
 	return strings.Join(entries, ",")
 }
 
+func (db Neo) ConvertToDriverError(err error) error {
+	e := err.(*errors.Error).InnerMost().(messages.FailureMessage)
+	log.WithFields(e.Metadata).Infof("Attempted post failure")
+	if val, ok := e.Metadata["code"]; ok && val == ConstraintFailure {
+		return DriverError{
+			Status:  http.StatusConflict,
+			Message: "Action would violate constraint set by model",
+		}
+	}
+	return err
+}
+
 func (db *Neo) MakeRequest(req *config.DBRequest) error {
 
 	log.WithFields(logHelper(req)).Info("Database request made")
@@ -134,19 +140,11 @@ func (db *Neo) MakeRequest(req *config.DBRequest) error {
 				Info("Statement created")
 			stmtPrepared, err := conn.PrepareNeo(stmt)
 			if err != nil {
-				return err
+				return db.ConvertToDriverError(err)
 			}
 			_, err = stmtPrepared.ExecNeo(nil)
 			if err != nil {
-				e := err.(*errors.Error).InnerMost().(messages.FailureMessage)
-				log.WithFields(e.Metadata).Infof("Attempted post failure")
-				if val, ok := e.Metadata["code"]; ok && val == ConstraintFailure {
-					return DriverError{
-						Status:  http.StatusConflict,
-						Message: "Action would violate constraint set by model",
-					}
-				}
-				return err
+				return db.ConvertToDriverError(err)
 			}
 			return nil
 		}

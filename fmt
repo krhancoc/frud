@@ -1,0 +1,21 @@
+mode: set
+github.com/krhancoc/frud/main.go:5.13,7.9 2 0
+github.com/krhancoc/frud/server.go:21.13,25.2 3 1
+github.com/krhancoc/frud/server.go:31.59,33.16 2 1
+github.com/krhancoc/frud/server.go:36.2,38.16 3 1
+github.com/krhancoc/frud/server.go:33.16,35.3 1 1
+github.com/krhancoc/frud/server.go:42.44,47.16 3 1
+github.com/krhancoc/frud/server.go:50.2,51.16 2 1
+github.com/krhancoc/frud/server.go:56.2,69.16 6 1
+github.com/krhancoc/frud/server.go:72.2,74.16 3 1
+github.com/krhancoc/frud/server.go:77.2,78.16 2 1
+github.com/krhancoc/frud/server.go:81.2,97.16 9 1
+github.com/krhancoc/frud/server.go:100.2,107.17 4 1
+github.com/krhancoc/frud/server.go:110.2,110.12 1 0
+github.com/krhancoc/frud/server.go:47.16,48.13 1 0
+github.com/krhancoc/frud/server.go:51.16,52.13 1 0
+github.com/krhancoc/frud/server.go:69.16,70.13 1 0
+github.com/krhancoc/frud/server.go:74.16,75.13 1 0
+github.com/krhancoc/frud/server.go:78.16,79.13 1 0
+github.com/krhancoc/frud/server.go:97.16,98.13 1 0
+github.com/krhancoc/frud/server.go:107.17,109.3 1 1

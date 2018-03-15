@@ -103,7 +103,7 @@ func makeValStmt(vals map[string]string, model []*config.Field) string {
 			switch field.ValueType {
 			case "int":
 				i, _ := strconv.ParseInt(val, 10, 32)
-				entries = append(entries, fmt.Sprintf(`%s: %i`, field.Key, i))
+				entries = append(entries, fmt.Sprintf(`%s: %d`, field.Key, i))
 			default:
 				entries = append(entries, fmt.Sprintf(`%s: "%s"`, field.Key, val))
 			}

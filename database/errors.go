@@ -8,5 +8,5 @@ type DriverError struct {
 }
 
 func (i DriverError) Error() string {
-	return fmt.Sprintf("%i error: %s", i.Status, i.Message)
+	return fmt.Sprintf("%d error: %s", i.Status, i.Message)
 }

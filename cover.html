@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/krhancoc/frud/config/util.go (100.0%)</option>
+				
+				<option value="file1">github.com/krhancoc/frud/main.go (0.0%)</option>
+				
+				<option value="file2">github.com/krhancoc/frud/server.go (84.8%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package config
+
+import (
+        "encoding/json"
+        "fmt"
+        "io/ioutil"
+
+        log "github.com/sirupsen/logrus"
+)
+
+func LoadConfig(filename string) (Configuration, error) <span class="cov8" title="1">{
+        configuration := Configuration{}
+        raw, err := ioutil.ReadFile(filename)
+        if err != nil </span><span class="cov8" title="1">{
+                return configuration, err
+        }</span>
+        <span class="cov8" title="1">err = json.Unmarshal(raw, &amp;configuration)
+        if err != nil </span><span class="cov8" title="1">{
+                return configuration, err
+        }</span>
+        <span class="cov8" title="1">return configuration, ValidateConfiguration(configuration)</span>
+}
+
+func validateModelMethod(conf *PlugConfig) error <span class="cov8" title="1">{
+        log.Infof("Validating Plugin")
+        idFound := false
+        if conf.Name == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf(`Missing "name" field for plugin`)
+        }</span>
+        <span class="cov8" title="1">if conf.Path == "" </span><span class="cov8" title="1">{
+                return fmt.Errorf(`Missing "path" field for plugin`)
+        }</span>
+        <span class="cov8" title="1">m := make(map[string]bool, len(conf.Model))
+        for _, field := range conf.Model </span><span class="cov8" title="1">{
+                if field.Key == "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf(`Missing "key" field for a model object in plugin %s`, conf.Name)
+                }</span>
+                <span class="cov8" title="1">if field.ValueType == "" </span><span class="cov8" title="1">{
+                        return fmt.Errorf(`Missing "value_type" field for a model object in plugin %s`, conf.Name)
+                }</span>
+                <span class="cov8" title="1">if _, ok := m[field.Key]; ok </span><span class="cov8" title="1">{
+                        return fmt.Errorf(`Duplicate key - %s - value in model for plugin %s`, field.Key, conf.Name)
+                }</span>
+                <span class="cov8" title="1">m[field.Key] = true
+                for _, option := range field.Options </span><span class="cov8" title="1">{
+                        if option == "id" </span><span class="cov8" title="1">{
+                                if idFound </span><span class="cov8" title="1">{
+                                        return fmt.Errorf("Multiple id's found in model %s", conf.Name)
+                                }</span>
+                                <span class="cov8" title="1">idFound = true</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validatePlugins(conf []*PlugConfig) error <span class="cov8" title="1">{
+
+        names := make(map[string]bool, len(conf))
+        paths := make(map[string]bool, len(conf))
+        for _, plug := range conf </span><span class="cov8" title="1">{
+
+                if _, ok := names[plug.Name]; ok </span><span class="cov8" title="1">{
+                        return fmt.Errorf(`Duplicate name - %s`, plug.Name)
+                }</span>
+                <span class="cov8" title="1">names[plug.Name] = true
+
+                if _, ok := names[plug.Path]; ok </span><span class="cov8" title="1">{
+                        return fmt.Errorf(`Duplicate path - %s`, plug.Path)
+                }</span>
+                <span class="cov8" title="1">paths[plug.Path] = true
+
+                if len(plug.Model) &gt; 0 </span><span class="cov8" title="1">{
+                        if err := validateModelMethod(plug); err != nil </span><span class="cov8" title="1">{
+                                return err
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func ValidateConfiguration(conf Configuration) error <span class="cov8" title="1">{
+        return validatePlugins(conf.Manager.Plugs)
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+const local string = "LOCAL"
+
+func main() <span class="cov0" title="0">{
+        _ = StartServer("config.json")
+        select </span>{}
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
+
+import (
+        "net"
+        "net/http"
+        "os"
+        "strconv"
+        "time"
+
+        "github.com/codegangsta/negroni"
+        "github.com/gorilla/mux"
+        "github.com/krhancoc/frud/config"
+        "github.com/krhancoc/frud/database"
+        "github.com/krhancoc/frud/middleware"
+        "github.com/krhancoc/frud/plug"
+        log "github.com/sirupsen/logrus"
+        "github.com/unrolled/render"
+        "github.com/unrolled/secure"
+)
+
+func init() <span class="cov8" title="1">{
+        log.SetFormatter(&amp;log.TextFormatter{})
+        log.SetOutput(os.Stdout)
+        log.SetLevel(log.InfoLevel)
+}</span>
+
+type tcpKeepAliveListener struct {
+        *net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (net.Conn, error) <span class="cov8" title="1">{
+        tc, err := ln.AcceptTCP()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">tc.SetKeepAlive(true)
+        tc.SetKeepAlivePeriod(3 * time.Minute)
+        return tc, nil</span>
+}
+
+// StartServer Wraps the mux Router and uses the Negroni Middleware
+func StartServer(path string) *http.Server <span class="cov8" title="1">{
+        //Load up Logger
+        // Load up database
+        log.Info("Setting up database")
+        conf, err := config.LoadConfig(path)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov8" title="1">db, err := database.CreateDatabase(conf)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+
+        // Create App context
+        <span class="cov8" title="1">ctx := config.AppContext{
+                Driver:  db.(config.Driver),
+                Render:  render.New(),
+                Version: conf.Context.Version,
+                Port:    strconv.Itoa(conf.Context.Port),
+        }
+
+        //Instantiate middleware
+        router := mux.NewRouter().StrictSlash(true)
+        router.Use(mux.MiddlewareFunc(middleware.Converter))
+
+        log.Info("Creating Plugin Manager")
+        plugManager, err := plug.CreatePlugManager(conf.Manager)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov8" title="1">log.Info("Attaching Routes")
+        err = plugManager.AttachRoutes(router, ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov8" title="1">err = plugManager.InitGenericRoutes(router, conf.Manager, ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov8" title="1">isDevelopment := true
+
+        secureMiddleware := secure.New(secure.Options{
+                IsDevelopment:      isDevelopment, // This will cause the AllowedHosts, SSLRedirect, and STSSeconds/STSIncludeSubdomains options to be ignored during development. When deploying to production, be sure to set this to false.
+                AllowedHosts:       []string{},    // AllowedHosts is a list of fully qualified domain names that are allowed (CORS)
+                ContentTypeNosniff: true,          // If ContentTypeNosniff is true, adds the X-Content-Type-Options header with the value `nosniff`. Default is false.
+                BrowserXssFilter:   true,          // If BrowserXssFilter is true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
+        })
+
+        n := negroni.New()
+        n.Use(negroni.NewLogger())
+        n.Use(negroni.HandlerFunc(secureMiddleware.HandlerFuncWithNext))
+        n.UseHandler(router)
+        log.Println("===&gt; Starting app (v" + ctx.Version + ") on port " + ctx.Port)
+
+        ln, err := net.Listen("tcp", ":"+ctx.Port)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov8" title="1">srv := http.Server{
+                Addr:    ":" + ctx.Port,
+                Handler: n,
+        }
+
+        go srv.Serve(tcpKeepAliveListener{ln.(*net.TCPListener)})
+        _, err = http.Get("http://localhost:" + ctx.Port)
+        for err == nil </span><span class="cov8" title="1">{
+                return &amp;srv
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

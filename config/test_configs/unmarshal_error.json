@@ -1,0 +1,35 @@
+{
+  "context": {
+    "version": 1,
+    "port": 8080
+  },
+  "database": {
+    "type": "neo4j",
+    "hostname": "localhost",
+    "port": 7687,
+    "user": "neo4j",
+    "password": "secret"
+  },
+  "manager": {
+    "generics": ["healthcheck"],
+    "plugins": [
+      {
+        "name": "entry",
+        "pathtocompiled": "_plugins/out/entry.so",
+        "pathtocode": "_plugins/main/entry"
+      },
+      {
+        "name": "modelonly",
+        "path": "/modelonly",
+        "description": "Model only endpoint",
+        "model": [
+          {
+            "key": "name",
+            "value_type": "string",
+            "options": ["id"]
+          }
+        ]
+      }
+    ]
+  }
+}

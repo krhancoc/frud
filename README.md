@@ -21,18 +21,18 @@ To use the model method you are going to have to define it within the config. Cu
 ```json
 "plugins": [
       {
-        "name": "NAME_OF_MODEL" *Required and unique*,
-        "path": "/modelonly" *Required and unique*,
+        "name": "NAME_OF_MODEL", //Required and unique
+        "path": "/modelonly", //Required and unique
         "description": "Model only endpoint",
         "model": [
           {
-            "key": "name" *Required and unique*,
-            "value_type": "string" *Required - values can be int, string*,
-            "options": ["id"] * Not required - must exist at most one model field with "id" option*
+            "key": "name", //Required and unique,
+            "value_type": "string", // Required - values can be int, string,
+            "options": ["id"] // Not required - must exist at most one model field with "id" option
           }
           {
-            "key": "anotherExample" *Required and unique*,
-            "value_type": "int" *Required - values can be int, string*,
+            "key": "anotherExample", //Required and unique,
+            "value_type": "int" //Required - values can be int, string,
           }
         ]
       }

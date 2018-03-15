@@ -1,38 +1,44 @@
 # Frud - Framework for CRUD (Create, Read, Update, Delete) applications
 
-In my attempt to learn Go I wanted to create a pluggable framework where the only work required by the user is to create a plugin like object and pass this to the server
+In my attempt to learn Go I wanted to create a pluggable framework where the only work required by the user is to create a plugin like object and pass this to the server.  Another option is to create
+their data models from a configuration object in JSON and pass this to the server, it will then create these models use the attached database drivers
 
-This is by no means finished in any capacity.
-<!-- ## Getting Started
+Database's currently supported:
+* Neo4J
 
-
-
-### Prerequisites
-
-What things you need to install the software and how to install them
-
-```
-Give examples
+This is by no means finished in any capacity, but will gladly accept pull requests.
+## Getting Started
+First thing is to compile the project
+```bash
+go build
 ```
 
-### Installing
+### Plugin Definition Method
+Next thing to do is to compile your plugins,  you can find an example plugin within the `_plugins` directory.  The reason for the underscore is that the go compiler will ignore directorys within the plugin.  You have to make sure to follow the rules dictated by the [go plugin library](https://golang.org/pkg/plugin/).  Make sure in the configuration object to set the `pathtocompiled`, and the `pathtocode`. The server does need both (look to the file "config.json" for an example config").
 
-A step by step series of examples that tell you have to get a development env running
-
-Say what the step will be
-
+### Model Definition Method
+To use the model method you are going to have to define it within the config. Currently I've only supported simple data types.  No relationships just yet.
+```json
+"plugins": [
+      {
+        "name": "NAME_OF_MODEL" *Required and unique*,
+        "path": "/modelonly" *Required and unique*,
+        "description": "Model only endpoint",
+        "model": [
+          {
+            "key": "name" *Required and unique*,
+            "value_type": "string" *Required - values can be int, string*,
+            "options": ["id"] * Not required - must exist at most one model field with "id" option*
+          }
+          {
+            "key": "anotherExample" *Required and unique*,
+            "value_type": "int" *Required - values can be int, string*,
+          }
+        ]
+      }
+    ]
 ```
-Give the example
-```
-
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
+<!--
 ## Running the tests
 
 Explain how to run the automated tests for this system
@@ -77,5 +83,5 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details
 

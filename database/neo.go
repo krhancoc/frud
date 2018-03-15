@@ -141,6 +141,8 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		stmt = fmt.Sprintf(`CREATE (n: %s { %s })`, req.Type, makeValStmt(req.Values, req.Model))
 	case "get":
 		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Values, req.Model))
+	case "delete":
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DELETE (n)`, req.Type, makeValStmt(req.Values, req.Model))
 	}
 	log.
 		WithField("statement", stmt).
@@ -161,6 +163,9 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		result, err := stmtPrepared.QueryNeo(nil)
 		r, _, _ := result.All()
 		return r, err
+	case "delete":
+		_, err := stmtPrepared.ExecNeo(nil)
+		return nil, err
 	}
 	return nil, nil
 }

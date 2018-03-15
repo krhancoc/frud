@@ -120,7 +120,40 @@ func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug 
 
 func delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
 
-	ctx.Render.Text(w, 200, "HELLO")
+	b, _ := ioutil.ReadAll(req.Body)
+	m := paramsToVal(b)
+	if len(m) == 0 {
+		ctx.Render.JSON(w, http.StatusBadRequest, Message{
+			Status:  http.StatusBadRequest,
+			Message: "No arguments given",
+		})
+		return
+	}
+
+	log.WithFields(log.Fields{
+		"method": req.Method,
+		"object": plug.Name,
+		"params": string(b),
+	}).Info("Post request received")
+
+	dbReq := &config.DBRequest{
+		Method: "delete",
+		Values: m,
+		Type:   plug.Name,
+		Model:  plug.Model,
+	}
+	_, err := ctx.Driver.MakeRequest(dbReq)
+	if err != nil {
+		e := err.(database.DriverError)
+		log.Error(err.Error())
+		ctx.Render.JSON(w, e.Status, e)
+		return
+	}
+	ctx.Render.JSON(w, http.StatusCreated, Message{
+		Status:  http.StatusCreated,
+		Message: "Deleted",
+	})
+	return
 }
 
 func put(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {

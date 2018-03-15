@@ -36,7 +36,6 @@ func Converter(next http.Handler) http.Handler {
 				if err != nil {
 					panic(err)
 				}
-				println(string(jsonString))
 				r.Body = Bytes(jsonString)
 			}
 		}

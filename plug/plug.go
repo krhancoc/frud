@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"go/importer"
 	"go/types"
-	"log"
-	"os"
-	"path/filepath"
 	"plugin"
 	"reflect"
 	"strings"
@@ -31,11 +28,7 @@ func checkUnimplimented(obj interface{}, i interface{}) []string {
 
 func getImportString(conf *config.PlugConfig) string {
 
-	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return dir[len(os.Getenv("GOPATH")+"/src/"):] + "/" + conf.PathToCode + "/" + conf.Name
+	return "github.com/krhancoc/frud/" + conf.PathToCode
 }
 
 func isPlugin(o types.Object) bool {
@@ -48,7 +41,7 @@ func isPlugin(o types.Object) bool {
 func plugPack(conf *config.PlugConfig) (*plugin.Plugin, *types.Package, error) {
 
 	importString := getImportString(conf)
-	p, err := plugin.Open(conf.PathToCompiled + conf.Name + ".so")
+	p, err := plugin.Open(conf.PathToCompiled)
 	if err != nil {
 		return nil, nil, err
 	}

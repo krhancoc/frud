@@ -83,7 +83,7 @@ func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug P
 		ctx.Render.JSON(w, e.Status, e)
 		return
 	}
-	ctx.Render.JSON(w, http.StatusAccepted, result)
+	ctx.Render.JSON(w, http.StatusOK, result)
 	return
 }
 
@@ -149,8 +149,8 @@ func delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plu
 		ctx.Render.JSON(w, e.Status, e)
 		return
 	}
-	ctx.Render.JSON(w, http.StatusCreated, Message{
-		Status:  http.StatusCreated,
+	ctx.Render.JSON(w, http.StatusOK, Message{
+		Status:  http.StatusOK,
 		Message: "Deleted",
 	})
 	return

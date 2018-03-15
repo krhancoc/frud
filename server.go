@@ -1,8 +1,11 @@
 package main
 
 import (
+	"net"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
@@ -21,8 +24,22 @@ func init() {
 	log.SetLevel(log.InfoLevel)
 }
 
+type tcpKeepAliveListener struct {
+	*net.TCPListener
+}
+
+func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
+	tc, err := ln.AcceptTCP()
+	if err != nil {
+		return nil, err
+	}
+	tc.SetKeepAlive(true)
+	tc.SetKeepAlivePeriod(3 * time.Minute)
+	return tc, nil
+}
+
 // StartServer Wraps the mux Router and uses the Negroni Middleware
-func StartServer(path string) {
+func StartServer(path string) *http.Server {
 	//Load up Logger
 	// Load up database
 	log.Info("Setting up database")
@@ -75,5 +92,20 @@ func StartServer(path string) {
 	n.Use(negroni.HandlerFunc(secureMiddleware.HandlerFuncWithNext))
 	n.UseHandler(router)
 	log.Println("===> Starting app (v" + ctx.Version + ") on port " + ctx.Port)
-	n.Run(":" + ctx.Port)
+
+	ln, err := net.Listen("tcp", ":"+ctx.Port)
+	if err != nil {
+		panic(err)
+	}
+	srv := http.Server{
+		Addr:    ":" + ctx.Port,
+		Handler: n,
+	}
+
+	go srv.Serve(tcpKeepAliveListener{ln.(*net.TCPListener)})
+	_, err = http.Get("http://localhost:" + ctx.Port)
+	for err == nil {
+		return &srv
+	}
+	return nil
 }

@@ -18,7 +18,7 @@ Next thing to do is to compile your plugins,  you can find an example plugin wit
 
 ### Model Definition Method
 To use the model method you are going to have to define it within the config. Currently I've only supported simple data types.  No relationships just yet.
-```json
+```javascript
 "plugins": [
       {
         "name": "NAME_OF_MODEL", //Required and unique

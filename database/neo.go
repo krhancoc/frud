@@ -112,6 +112,16 @@ func makeValStmt(vals map[string]string, model []*config.Field) string {
 	return strings.Join(entries, ",")
 }
 
+func fetchId(models []*config.Field) string {
+	for _, field := range models {
+		for _, option := range field.Options {
+			if option == "id" {
+				return field.Key
+			}
+		}
+	}
+	return ""
+}
 func (db Neo) ConvertToDriverError(err error) error {
 	e := err.(*errors.Error).InnerMost().(messages.FailureMessage)
 	log.WithFields(e.Metadata).Infof("Attempted post failure")
@@ -143,6 +153,11 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Values, req.Model))
 	case "delete":
 		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DELETE (n)`, req.Type, makeValStmt(req.Values, req.Model))
+	case "put":
+		if _, ok := req.Values["id"]; ok {
+			_ = fetchId(req.Model)
+			//			stmt = fmt.Sprintf(`MATCH (n: %s { %s }) SET %s`, req.Type, id, )
+		}
 	}
 	log.
 		WithField("statement", stmt).

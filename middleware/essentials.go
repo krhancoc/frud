@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/krhancoc/gotech/util"
 )
@@ -36,7 +38,7 @@ func Converter(next http.Handler) http.Handler {
 				if err != nil {
 					panic(err)
 				}
-				r.Body = Bytes(jsonString)
+				r.Body = ioutil.NopCloser(strings.NewReader(string(jsonString)))
 			}
 		}
 		next.ServeHTTP(w, r)

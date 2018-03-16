@@ -27,6 +27,10 @@
             "key": "name",
             "value_type": "string",
             "options": ["id"]
+          },
+          {
+            "key": "anotherField",
+            "value_type": "string"
           }
         ]
       }

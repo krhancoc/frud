@@ -4,6 +4,8 @@
 *.so
 *.dylib
 frud
+cover.html
+cover.out
 
 # Test binary, build with `go test -c`
 *.test

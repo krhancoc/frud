@@ -8,7 +8,7 @@ type DBRequest struct {
 	Method string
 	Values map[string]string
 	Type   string
-	Model  []*Field
+	Model  Fields
 }
 
 type Driver interface {

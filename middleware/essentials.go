@@ -9,20 +9,6 @@ import (
 	"github.com/krhancoc/gotech/util"
 )
 
-// Bytes wrapper around byte slice
-type Bytes []byte
-
-// Close closes a byte string which does nothing...
-func (Bytes) Close() error {
-	return nil
-}
-
-// Read just copies over to another buffer
-func (w Bytes) Read(p []byte) (int, error) {
-	copy(p, w)
-	return len(w), nil
-}
-
 // Converter will make sure the body always has a JSON object
 func Converter(next http.Handler) http.Handler {
 

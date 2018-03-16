@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/johnnadratowski/golang-neo4j-bolt-driver/structures/messages"
-
 	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 	"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
 	"github.com/krhancoc/frud/config"
@@ -112,26 +110,26 @@ func makeValStmt(vals map[string]string, model []*config.Field) string {
 	return strings.Join(entries, ",")
 }
 
-func fetchId(models []*config.Field) string {
-	for _, field := range models {
-		for _, option := range field.Options {
-			if option == "id" {
-				return field.Key
-			}
-		}
+func makePutStmt(vals map[string]string) string {
+	stmt := []string{}
+	for key, val := range vals {
+		stmt = append(stmt, fmt.Sprintf(`n.%s = "%s"`, key, val))
 	}
-	return ""
+	return strings.Join(stmt, ",")
 }
+
 func (db Neo) ConvertToDriverError(err error) error {
-	e := err.(*errors.Error).InnerMost().(messages.FailureMessage)
-	log.WithFields(e.Metadata).Infof("Attempted post failure")
-	if val, ok := e.Metadata["code"]; ok && val == ConstraintFailure {
-		return DriverError{
-			Status:  http.StatusConflict,
-			Message: "Action would violate constraint set by model",
-		}
+
+	if err == nil {
+		return err
 	}
-	return err
+
+	e := err.(*errors.Error).InnerMost()
+	log.Error(e.Error())
+	return DriverError{
+		Status:  http.StatusConflict,
+		Message: "Problem with request",
+	}
 }
 
 func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
@@ -154,10 +152,22 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 	case "delete":
 		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DELETE (n)`, req.Type, makeValStmt(req.Values, req.Model))
 	case "put":
-		if _, ok := req.Values["id"]; ok {
-			_ = fetchId(req.Model)
-			//			stmt = fmt.Sprintf(`MATCH (n: %s { %s }) SET %s`, req.Type, id, )
+		err := req.FollowsModel()
+		if err != nil {
+			return nil, DriverError{
+				Status:  http.StatusBadRequest,
+				Message: err.Error(),
+			}
 		}
+		id := req.Model.GetId()
+		val, ok := req.Values[id]
+		if !ok {
+			return nil, DriverError{
+				Status:  http.StatusBadRequest,
+				Message: "No ID found in request",
+			}
+		}
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s:"%s" }) SET %s`, req.Type, id, val, makePutStmt(req.Values))
 	}
 	log.
 		WithField("statement", stmt).
@@ -171,16 +181,13 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		return nil, db.ConvertToDriverError(err)
 	}
 	switch req.Method {
-	case "post":
+	case "post", "delete", "put":
 		_, err := stmtPrepared.ExecNeo(nil)
-		return nil, err
+		return nil, db.ConvertToDriverError(err)
 	case "get":
 		result, err := stmtPrepared.QueryNeo(nil)
 		r, _, _ := result.All()
-		return r, err
-	case "delete":
-		_, err := stmtPrepared.ExecNeo(nil)
-		return nil, err
+		return r, db.ConvertToDriverError(err)
 	}
 	return nil, nil
 }

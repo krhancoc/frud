@@ -15,6 +15,7 @@ var endpoints = []struct {
 }{
 	{"POST", "modelonly", `{"name":"testEntry"}`, 201},
 	{"GET", "modelonly", `{"name":"testEntry"}`, 200},
+	{"PUT", "modelonly", `{"name":"testEntry", "anotherField: "yeppers"}`, 200},
 	{"DELETE", "modelonly", `{"name ":"testEntry"}`, 200},
 }
 

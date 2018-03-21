@@ -21,6 +21,7 @@ var configTests = []struct {
 	{"missing_path.json", false},
 	{"multiple_ids.json", false},
 	{"duplicate_keys.json", false},
+	{"bad_type.json", false},
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -28,6 +29,7 @@ func TestLoadConfig(t *testing.T) {
 	for _, c := range configTests {
 		_, err := config.LoadConfig("test_configs/" + c.path)
 		if err != nil && c.check {
+			println(err.Error())
 			t.Errorf("Config failed when should have passed %s", c.path)
 		} else if err == nil && !c.check {
 			t.Errorf("Config passed when should have failed %s", c.path)

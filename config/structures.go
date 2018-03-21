@@ -4,44 +4,10 @@ import (
 	"github.com/unrolled/render"
 )
 
-type DBRequest struct {
-	Method string
-	Values map[string]string
-	Type   string
-	Model  Fields
-}
-
 type Driver interface {
 	Connect() interface{}
 	MakeRequest(*DBRequest) (interface{}, error)
 	ConvertToDriverError(error) error
-}
-
-// Configuration object that acts as the parent to others
-type Configuration struct {
-	Context  *Context       `json:"context"`
-	Database *Database      `json:"database"`
-	Manager  *ManagerConfig `json:"manager"`
-}
-
-type ManagerConfig struct {
-	Generics []string      `json:"generics"`
-	Plugs    []*PlugConfig `json:"plugins"`
-}
-
-type PlugConfig struct {
-	PathToCode     string   `json:"pathtocode,omitempty"`
-	PathToCompiled string   `json:"pathtocompiled,omitempty"`
-	Name           string   `json:"name"`
-	Description    string   `json:"description,omitempty"`
-	Path           string   `json:"path,omitempty"`
-	Model          []*Field `json:"model,omitempty"`
-}
-
-type Field struct {
-	Key       string   `json:"key"`
-	ValueType string   `json:"value_type"`
-	Options   []string `json:"options,omitempty"`
 }
 
 // Context of the server itself

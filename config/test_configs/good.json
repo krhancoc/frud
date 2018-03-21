@@ -15,18 +15,38 @@
     "plugins": [
       {
         "name": "entry",
+        "path": "/entry",
         "pathtocompiled": "_plugins/out/entry.so",
         "pathtocode": "_plugins/main/entry"
       },
       {
-        "name": "modelonly",
-        "path": "/modelonly",
-        "description": "Model only endpoint",
+        "name": "people",
+        "path": "/people",
+        "description": "People only endpoint",
         "model": [
           {
             "key": "name",
             "value_type": "string",
             "options": ["id"]
+          },
+          {
+            "key": "idnumber",
+            "value_type": "int"
+          }
+        ]
+      },
+      {
+        "name": "meeting",
+        "path": "/meeting",
+        "description": "Meeting only endpoint",
+        "model": [
+          {
+            "key": "date",
+            "value_type": "string"
+          },
+          {
+            "key": "attending",
+            "value_type": "people"
           }
         ]
       }

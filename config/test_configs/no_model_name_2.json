@@ -14,6 +14,7 @@
     "generics": ["healthcheck"],
     "plugins": [
       {
+        "path": "/entry",
         "pathtocompiled": "_plugins/out/entry.so",
         "pathtocode": "_plugins/main/entry"
       },

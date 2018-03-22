@@ -9,11 +9,6 @@ type Field struct {
 	ForeignKey string   `json:"foreignkey,omitempty"`
 }
 
-var allowedTypes = []string{
-	"int",
-	"string",
-}
-
 func (field *Field) validateType(extraTypes map[string]string) error {
 	for key, val := range extraTypes {
 		if field.ValueType == key {

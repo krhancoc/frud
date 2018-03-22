@@ -7,7 +7,7 @@ import (
 	"net/url"
 
 	"github.com/krhancoc/frud/config"
-	"github.com/krhancoc/frud/database"
+	"github.com/krhancoc/frud/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -78,7 +78,7 @@ func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug P
 	}
 	result, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
-		e := err.(database.DriverError)
+		e := err.(errors.DriverError)
 		log.Error(err.Error())
 		ctx.Render.JSON(w, e.Status, e)
 		return
@@ -106,7 +106,7 @@ func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug 
 	}
 	_, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
-		e := err.(database.DriverError)
+		e := err.(errors.DriverError)
 		log.Error(err.Error())
 		ctx.Render.JSON(w, e.Status, e)
 		return
@@ -144,7 +144,7 @@ func delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plu
 	}
 	_, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
-		e := err.(database.DriverError)
+		e := err.(errors.DriverError)
 		log.Error(err.Error())
 		ctx.Render.JSON(w, e.Status, e)
 		return
@@ -182,7 +182,7 @@ func put(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug P
 	}
 	_, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
-		e := err.(database.DriverError)
+		e := err.(errors.DriverError)
 		log.Error(err.Error())
 		ctx.Render.JSON(w, e.Status, e)
 		return

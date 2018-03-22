@@ -12,10 +12,6 @@ func (f Fields) ToMap() map[string]string {
 	return m
 }
 
-func (f Fields) CheckValueType(t string) error {
-	return nil
-}
-
 func (f Fields) GetId() string {
 	for _, field := range f {
 		for _, option := range field.Options {
@@ -25,6 +21,27 @@ func (f Fields) GetId() string {
 		}
 	}
 	return ""
+}
+
+func (f Fields) ForeignKeys() Fields {
+	keys := []*Field{}
+	for _, val := range f {
+		if val.ForeignKey != "" {
+			keys = append(keys, val)
+		}
+	}
+	return keys
+}
+
+func (f Fields) Atomic() Fields {
+	keys := []*Field{}
+	for _, val := range f {
+		if val.ForeignKey == "" {
+			keys = append(keys, val)
+		}
+	}
+	return keys
+
 }
 
 func (f *Fields) validate(extraTypes map[string]string, name string) error {

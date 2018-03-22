@@ -1,4 +1,4 @@
-package database
+package neo
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
 	"github.com/johnnadratowski/golang-neo4j-bolt-driver/errors"
 	"github.com/krhancoc/frud/config"
+	frudError "github.com/krhancoc/frud/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,8 +18,9 @@ const (
 )
 
 type Neo struct {
-	Conf    *config.Database
-	Plugins []*config.PlugConfig
+	Conf       *config.Database
+	Plugins    []*config.PlugConfig
+	Connection *bolt.Conn
 }
 
 type constraint struct {
@@ -29,12 +31,16 @@ type constraint struct {
 func CreateNeo(conf config.Configuration) (config.Driver, error) {
 
 	var driver config.Driver
-	neo := &Neo{
-		Conf:    conf.Database,
-		Plugins: conf.Manager.Plugs,
+	connection, err := bolt.NewDriver().OpenNeo(fmt.Sprintf("bolt://%s:%s@%s:%d",
+		conf.Database.User, conf.Database.Password, conf.Database.Hostname, conf.Database.Port))
+	if err != nil {
+		panic(err)
 	}
-
-	err := neo.initModels()
+	neo := &Neo{
+		Plugins:    conf.Manager.Plugs,
+		Connection: &connection,
+	}
+	err = neo.initModels()
 	if err != nil {
 		return driver, err
 	}
@@ -42,55 +48,6 @@ func CreateNeo(conf config.Configuration) (config.Driver, error) {
 	driver = temp.(config.Driver)
 	return driver, err
 
-}
-func (db *Neo) createConstraints(cons []*constraint) error {
-	conn := db.Connect().(bolt.Conn)
-	defer conn.Close()
-	for _, c := range cons {
-		stmt := fmt.Sprintf(`CREATE CONSTRAINT ON (n:%s) ASSERT n.%s IS UNIQUE`, c.Model, c.Field)
-		log.WithFields(log.Fields{
-			"model":    c.Model,
-			"field":    c.Field,
-			"statment": stmt,
-		}).Info("Creating unique constraint")
-		n, err := conn.PrepareNeo(stmt)
-		if err != nil {
-			return err
-		}
-		_, err = n.ExecNeo(nil)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (db *Neo) initModels() error {
-
-	var constraints []*constraint
-	for _, plug := range db.Plugins {
-		for _, field := range plug.Model {
-			for _, option := range field.Options {
-				switch option {
-				case "id":
-					constraints = append(constraints, &constraint{
-						Model: plug.Name,
-						Field: field.Key,
-					})
-				}
-			}
-		}
-	}
-
-	return db.createConstraints(constraints)
-}
-
-func logHelper(req *config.DBRequest) log.Fields {
-	return map[string]interface{}{
-		"method": req.Method,
-		"type":   req.Type,
-		"values": req.Values,
-	}
 }
 
 func makeValStmt(vals map[string]string, model []*config.Field) string {
@@ -101,9 +58,9 @@ func makeValStmt(vals map[string]string, model []*config.Field) string {
 			switch field.ValueType {
 			case "int":
 				i, _ := strconv.ParseInt(val, 10, 32)
-				entries = append(entries, fmt.Sprintf(`%s: %d`, field.Key, i))
+				entries = append(entries, fmt.Sprintf(`%s:%d`, field.Key, i))
 			default:
-				entries = append(entries, fmt.Sprintf(`%s: "%s"`, field.Key, val))
+				entries = append(entries, fmt.Sprintf(`%s:"%s"`, field.Key, val))
 			}
 		}
 	}
@@ -126,7 +83,7 @@ func (db Neo) ConvertToDriverError(err error) error {
 
 	e := err.(*errors.Error).InnerMost()
 	log.Error(e.Error())
-	return DriverError{
+	return frudError.DriverError{
 		Status:  http.StatusConflict,
 		Message: "Problem with request",
 	}
@@ -135,26 +92,33 @@ func (db Neo) ConvertToDriverError(err error) error {
 func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 
 	log.WithFields(logHelper(req)).Info("Database request made")
-	conn := db.Connect().(bolt.Conn)
-	defer conn.Close()
+	conn := *db.Connection
 
-	if !Validate(req.Values, req.Model) {
-		return "", fmt.Errorf("Invalid request")
+	err := req.Validate()
+	if err != nil {
+		return nil, err
 	}
 
 	var stmt string
 
 	switch req.Method {
 	case "post":
-		stmt = fmt.Sprintf(`CREATE (n: %s { %s })`, req.Type, makeValStmt(req.Values, req.Model))
+		stmt = MakePostStatement(req)
 	case "get":
 		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Values, req.Model))
 	case "delete":
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DELETE (n)`, req.Type, makeValStmt(req.Values, req.Model))
+		vals := makeValStmt(req.Values, req.Model)
+		if vals == "" {
+			return nil, frudError.DriverError{
+				Status:  http.StatusBadRequest,
+				Message: "Bad request",
+			}
+		}
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DETACH DELETE (n)`, req.Type, vals)
 	case "put":
 		err := req.FollowsModel()
 		if err != nil {
-			return nil, DriverError{
+			return nil, frudError.DriverError{
 				Status:  http.StatusBadRequest,
 				Message: err.Error(),
 			}
@@ -162,7 +126,7 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		id := req.Model.GetId()
 		val, ok := req.Values[id]
 		if !ok {
-			return nil, DriverError{
+			return nil, frudError.DriverError{
 				Status:  http.StatusBadRequest,
 				Message: "No ID found in request",
 			}
@@ -192,13 +156,13 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 	return nil, nil
 }
 
-func (db *Neo) Connect() interface{} {
-	driver := bolt.NewDriver()
-	connection, err := driver.OpenNeo(fmt.Sprintf("bolt://%s:%s@%s:%d",
-		db.Conf.User, db.Conf.Password, db.Conf.Hostname, db.Conf.Port))
-	if err != nil {
-		log.Fatal(err)
-		panic(err)
-	}
-	return connection
-}
+// func (db *Neo) Connect() interface{} {
+// 	driver := bolt.NewDriver()
+// 	connection, err := driver.OpenNeo(fmt.Sprintf("bolt://%s:%s@%s:%d",
+// 		db.Conf.User, db.Conf.Password, db.Conf.Hostname, db.Conf.Port))
+// 	if err != nil {
+// 		log.Fatal(err)
+// 		panic(err)
+// 	}
+// 	return connection
+// }

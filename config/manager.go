@@ -7,10 +7,6 @@ type ManagerConfig struct {
 	Plugs    []*PlugConfig `json:"plugins"`
 }
 
-var allowedGenerics = []string{
-	"healthcheck",
-}
-
 func (conf *ManagerConfig) validateGenerics() error {
 	for _, gen := range conf.Generics {
 		found := false

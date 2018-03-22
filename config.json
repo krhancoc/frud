@@ -30,8 +30,16 @@
             "options": ["id"]
           },
           {
-            "key": "idnumber",
-            "value_type": "int"
+            "key": "nickname",
+            "value_type": "string"
+          },
+          {
+            "key": "supervisor",
+            "value_type": "people"
+          },
+          {
+            "key": "partner",
+            "value_type": "people"
           }
         ]
       },
@@ -42,7 +50,8 @@
         "model": [
           {
             "key": "date",
-            "value_type": "string"
+            "value_type": "string",
+            "options": ["id"]
           },
           {
             "key": "attending",

@@ -1,12 +1,32 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type DBRequest struct {
 	Method string
 	Values map[string]string
 	Type   string
 	Model  Fields
+}
+
+func (req *DBRequest) Validate() error {
+	for _, field := range req.Model {
+		if val, ok := req.Values[field.Key]; ok {
+			switch field.ValueType {
+			case "int":
+				_, err := strconv.ParseInt(val, 10, 32)
+				if err != nil {
+					return fmt.Errorf("Cannot convert to value type %s", val)
+				}
+			default:
+				continue
+			}
+		}
+	}
+	return nil
 }
 
 func (req *DBRequest) FollowsModel() error {

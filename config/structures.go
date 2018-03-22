@@ -4,8 +4,16 @@ import (
 	"github.com/unrolled/render"
 )
 
+var allowedGenerics = []string{
+	"healthcheck",
+}
+
+var allowedTypes = []string{
+	"int",
+	"string",
+}
+
 type Driver interface {
-	Connect() interface{}
 	MakeRequest(*DBRequest) (interface{}, error)
 	ConvertToDriverError(error) error
 }

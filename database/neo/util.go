@@ -52,8 +52,9 @@ func (db *Neo) initModels() error {
 
 func logHelper(req *config.DBRequest) log.Fields {
 	return map[string]interface{}{
-		"method": req.Method,
-		"type":   req.Type,
-		"values": req.Values,
+		"method":  req.Method,
+		"type":    req.Type,
+		"params":  req.Params,
+		"queries": req.Queries,
 	}
 }

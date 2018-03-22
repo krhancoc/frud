@@ -18,7 +18,6 @@ const (
 )
 
 type Neo struct {
-	Conf       *config.Database
 	Plugins    []*config.PlugConfig
 	Connection *bolt.Conn
 }
@@ -101,13 +100,13 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 
 	var stmt string
 
-	switch req.Method {
+	switch strings.ToLower(req.Method) {
 	case "post":
 		stmt = MakePostStatement(req)
 	case "get":
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Values, req.Model))
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Queries, req.Model))
 	case "delete":
-		vals := makeValStmt(req.Values, req.Model)
+		vals := makeValStmt(req.Params, req.Model)
 		if vals == "" {
 			return nil, frudError.DriverError{
 				Status:  http.StatusBadRequest,
@@ -124,14 +123,14 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 			}
 		}
 		id := req.Model.GetId()
-		val, ok := req.Values[id]
+		val, ok := req.Params[id]
 		if !ok {
 			return nil, frudError.DriverError{
 				Status:  http.StatusBadRequest,
 				Message: "No ID found in request",
 			}
 		}
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s:"%s" }) SET %s`, req.Type, id, val, makePutStmt(req.Values))
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s:"%s" }) SET %s`, req.Type, id, val, makePutStmt(req.Params))
 	}
 	log.
 		WithField("statement", stmt).

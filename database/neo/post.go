@@ -14,7 +14,7 @@ func MakePostStatement(req *config.DBRequest) string {
 	createStmt := []string{}
 	charUses := 0
 	for _, val := range req.Model.ForeignKeys() {
-		if v, ok := req.Values[val.Key]; ok {
+		if v, ok := req.Params[val.Key]; ok {
 			matchStmt = append(matchStmt, fmt.Sprintf(`(%c:%s {%s:"%s"})`,
 				characters[charUses], val.ValueType, val.ForeignKey, v))
 			createStmt = append(createStmt, fmt.Sprintf(`(n)-[:%s]->(%c)`, val.Key, characters[charUses]))
@@ -23,7 +23,7 @@ func MakePostStatement(req *config.DBRequest) string {
 	}
 	vals := []string{}
 	for _, val := range req.Model.Atomic() {
-		vals = append(vals, fmt.Sprintf(`%s:"%s"`, val.Key, req.Values[val.Key]))
+		vals = append(vals, fmt.Sprintf(`%s:"%s"`, val.Key, req.Params[val.Key]))
 	}
 	finalWith := strings.Join(append(strings.Split(characters[:charUses], ""), "n"), ",")
 	if len(matchStmt) > 0 {

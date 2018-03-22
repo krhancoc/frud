@@ -45,21 +45,21 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 				"Put":    MakeHandler(ctx, inter.Put),
 				"Delete": MakeHandler(ctx, inter.Delete),
 			}
-		} else {
-			methods = map[string]http.HandlerFunc{
-				"Get":    makeGenericHandler(ctx, *plug, get),
-				"Post":   makeGenericHandler(ctx, *plug, post),
-				"Delete": makeGenericHandler(ctx, *plug, delete),
-				"Put":    makeGenericHandler(ctx, *plug, put),
+			for method, f := range methods {
+				router.
+					Methods(method).
+					Path(plug.Path).
+					Name(plug.Name).
+					Handler(f)
+				color.Green("%s -- %s -- %s", plug.Name, method, plug.Path)
 			}
-		}
-		for method, f := range methods {
+		} else {
 			router.
-				Methods(method).
+				Methods("GET", "POST", "DELETE", "PUT").
 				Path(plug.Path).
 				Name(plug.Name).
-				Handler(f)
-			color.Green("%s -- %s -- %s", plug.Name, method, plug.Path)
+				Handler(makeGenericHandler(ctx, *plug, generic))
+			color.Green("Get, Put, Delete, Post - %s - %s", plug.Name, plug.Path)
 		}
 	}
 	return nil

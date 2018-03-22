@@ -27,7 +27,7 @@ func TestPostStatement(t *testing.T) {
 				ValueType: "string",
 			},
 		},
-		Values: map[string]string{
+		Params: map[string]string{
 			"attending": "ken",
 			"meetings":  "datehere",
 			"another":   "anotherthing",

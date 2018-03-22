@@ -107,5 +107,7 @@ func StartServer(path string) *http.Server {
 	for err == nil {
 		return &srv
 	}
+	srv.Shutdown(nil)
+	panic(err)
 	return nil
 }

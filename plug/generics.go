@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/krhancoc/frud/config"
 	"github.com/krhancoc/frud/errors"
@@ -61,20 +62,24 @@ func queryToVal(q url.Values, plugs []*config.Field) map[string]string {
 	return vals
 }
 
-func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
+func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
 
-	m := queryToVal(req.URL.Query(), plug.Model)
+	b, _ := ioutil.ReadAll(req.Body)
+	params := paramsToVal(b)
+	queries := queryToVal(req.URL.Query(), plug.Model)
 	log.WithFields(log.Fields{
 		"method": req.Method,
 		"object": plug.Name,
-		"query":  m,
+		"params": string(b),
+		"query":  queries,
 	}).Info("Post request received")
 
 	dbReq := &config.DBRequest{
-		Method: "get",
-		Values: m,
-		Type:   plug.Name,
-		Model:  plug.Model,
+		Method:  req.Method,
+		Params:  params,
+		Queries: queries,
+		Type:    plug.Name,
+		Model:   plug.Model,
 	}
 	result, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
@@ -83,113 +88,19 @@ func get(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug P
 		ctx.Render.JSON(w, e.Status, e)
 		return
 	}
-	ctx.Render.JSON(w, http.StatusOK, result)
-	return
-}
-
-func post(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
-
-	b, _ := ioutil.ReadAll(req.Body)
-	m := paramsToVal(b)
-
-	log.WithFields(log.Fields{
-		"method": req.Method,
-		"object": plug.Name,
-		"params": string(b),
-	}).Info("Post request received")
-
-	dbReq := &config.DBRequest{
-		Method: "post",
-		Values: m,
-		Type:   plug.Name,
-		Model:  plug.Model,
-	}
-	_, err := ctx.Driver.MakeRequest(dbReq)
-	if err != nil {
-		e := err.(errors.DriverError)
-		log.Error(err.Error())
-		ctx.Render.JSON(w, e.Status, e)
-		return
-	}
-	ctx.Render.JSON(w, http.StatusCreated, Message{
-		Status:  http.StatusCreated,
-		Message: "Created",
-	})
-	return
-}
-
-func delete(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
-
-	b, _ := ioutil.ReadAll(req.Body)
-	m := paramsToVal(b)
-	if len(m) == 0 {
-		ctx.Render.JSON(w, http.StatusBadRequest, Message{
-			Status:  http.StatusBadRequest,
-			Message: "No arguments given",
+	switch strings.ToLower(req.Method) {
+	case "put", "post":
+		ctx.Render.JSON(w, http.StatusCreated, Message{
+			Status:  http.StatusCreated,
+			Message: "Created",
 		})
-		return
-	}
-
-	log.WithFields(log.Fields{
-		"method": req.Method,
-		"object": plug.Name,
-		"params": string(b),
-	}).Info("Post request received")
-
-	dbReq := &config.DBRequest{
-		Method: "delete",
-		Values: m,
-		Type:   plug.Name,
-		Model:  plug.Model,
-	}
-	_, err := ctx.Driver.MakeRequest(dbReq)
-	if err != nil {
-		e := err.(errors.DriverError)
-		log.Error(err.Error())
-		ctx.Render.JSON(w, e.Status, e)
-		return
-	}
-	ctx.Render.JSON(w, http.StatusOK, Message{
-		Status:  http.StatusOK,
-		Message: "Deleted",
-	})
-	return
-}
-
-func put(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
-
-	b, _ := ioutil.ReadAll(req.Body)
-	m := paramsToVal(b)
-	if len(m) == 0 {
-		ctx.Render.JSON(w, http.StatusBadRequest, Message{
-			Status:  http.StatusBadRequest,
-			Message: "No arguments given",
+	case "delete":
+		ctx.Render.JSON(w, http.StatusOK, Message{
+			Status:  http.StatusCreated,
+			Message: "Created",
 		})
-		return
+	case "get":
+		ctx.Render.JSON(w, http.StatusOK, result)
 	}
-
-	log.WithFields(log.Fields{
-		"method": req.Method,
-		"object": plug.Name,
-		"params": string(b),
-	}).Info("Post request received")
-
-	dbReq := &config.DBRequest{
-		Method: "put",
-		Values: m,
-		Type:   plug.Name,
-		Model:  plug.Model,
-	}
-	_, err := ctx.Driver.MakeRequest(dbReq)
-	if err != nil {
-		e := err.(errors.DriverError)
-		log.Error(err.Error())
-		ctx.Render.JSON(w, e.Status, e)
-		return
-	}
-	ctx.Render.JSON(w, http.StatusOK, Message{
-		Status:  http.StatusOK,
-		Message: "Object Changed",
-	})
 	return
 }

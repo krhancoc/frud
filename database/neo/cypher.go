@@ -117,7 +117,13 @@ func (c *Cypher) Relations() *Cypher {
 		Req:        c.Req,
 		Vars:       c.Vars,
 	}
-
+	if len(relations) == 0 {
+		return &Cypher{
+			Req:        c.Req,
+			Vars:       c.Vars,
+			Statements: c.Statements,
+		}
+	}
 	if len(c.Statements) > 0 {
 		chars := []interface{}{}
 		i := 0
@@ -159,6 +165,13 @@ func (m *Command) Params() *Cypher {
 		}
 	}
 	m.Statements = stmts
+	if len(stmts) == 0 {
+		return &Cypher{
+			Req:        m.Req,
+			Vars:       newVars,
+			Statements: m.storage,
+		}
+	}
 	if len(m.storage) > 0 {
 		chars := []interface{}{}
 		i := 0
@@ -198,6 +211,13 @@ func (m *Command) ForeignKeys() *Cypher {
 		}
 	}
 	m.Statements = stmts
+	if len(stmts) == 0 {
+		return &Cypher{
+			Req:        m.Req,
+			Vars:       newVars,
+			Statements: m.storage,
+		}
+	}
 	if len(m.storage) > 0 {
 		chars := []interface{}{}
 		i := 0
@@ -246,7 +266,7 @@ func (c *Cypher) String() string {
 	for _, command := range c.Statements {
 		commands = append(commands, fmt.Sprintf("%v", command))
 	}
-	return strings.Join(commands, " ")
+	return strings.TrimSpace(strings.Join(commands, " "))
 }
 
 func CreateCypher(req *config.DBRequest) *Cypher {

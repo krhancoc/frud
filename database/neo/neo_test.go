@@ -39,14 +39,31 @@ var req = &config.DBRequest{
 	},
 }
 
+var reqTwo = &config.DBRequest{
+	Method: "post",
+	Type:   "meeting",
+	Model: []*config.Field{
+		&config.Field{
+			Key:       "another",
+			ValueType: "string",
+			Options:   []string{"id"},
+		},
+	},
+	Params: map[string]string{
+		"another": "anotherthing",
+	},
+}
+
 func TestCypher(t *testing.T) {
 	cypher := neo.CreateCypher(req)
+	cypherTwo := neo.CreateCypher(reqTwo)
 	println(cypher.Match().ForeignKeys().Match().ForeignKeys().String())
 	println(cypher.Match().ForeignKeys().Create().Params().Relations().String())
+	println(cypherTwo.Create().Params().String())
+	println(cypherTwo.Match().ForeignKeys().Create().Params().Relations().String())
 	t.Fail()
 
 }
 func TestPostStatement(t *testing.T) {
-	println(neo.MakePostStatement(req))
 	t.Fail()
 }

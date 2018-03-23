@@ -71,6 +71,14 @@ func createStatement(req *config.DBRequest) (string, error) {
 			Create().Params().
 			Relations().
 			String(), nil
+	case "get":
+		//return CreateCypher(req).
+		//	Match().Queries().String(), nil
+	case "put":
+		// return CreateCypher(req).Change().String(), nil
+	case "delete":
+		//	return CreateCypher(req).
+		//		Match().Params().Delete().String(), nil
 	}
 	return "", nil
 

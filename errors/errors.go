@@ -3,7 +3,7 @@ package errors
 import "fmt"
 
 type DriverError struct {
-	Status  int    `json:"status`
+	Status  int    `json:"status"`
 	Message string `json:"message"`
 }
 

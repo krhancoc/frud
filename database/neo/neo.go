@@ -3,7 +3,6 @@ package neo
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	bolt "github.com/johnnadratowski/golang-neo4j-bolt-driver"
@@ -49,23 +48,6 @@ func CreateNeo(conf config.Configuration) (config.Driver, error) {
 
 }
 
-func makeValStmt(vals map[string]string, model []*config.Field) string {
-
-	var entries []string
-	for _, field := range model {
-		if val, ok := vals[field.Key]; ok {
-			switch field.ValueType {
-			case "int":
-				i, _ := strconv.ParseInt(val, 10, 32)
-				entries = append(entries, fmt.Sprintf(`%s:%d`, field.Key, i))
-			default:
-				entries = append(entries, fmt.Sprintf(`%s:"%s"`, field.Key, val))
-			}
-		}
-	}
-	return strings.Join(entries, ",")
-}
-
 func makePutStmt(vals map[string]string) string {
 	stmt := []string{}
 	for key, val := range vals {
@@ -88,6 +70,45 @@ func (db Neo) ConvertToDriverError(err error) error {
 	}
 }
 
+func createStatement(req *config.DBRequest) (string, error) {
+
+	var stmt string
+	switch strings.ToLower(req.Method) {
+	case "post":
+		stmt = MakePostStatement(req)
+	case "get":
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Queries, req.Model))
+	case "delete":
+		vals := makeValStmt(req.Params, req.Model)
+		if vals == "" {
+			return stmt, frudError.DriverError{
+				Status:  http.StatusBadRequest,
+				Message: "Bad request",
+			}
+		}
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DETACH DELETE (n)`, req.Type, vals)
+	case "put":
+		err := req.FollowsModel()
+		if err != nil {
+			return stmt, frudError.DriverError{
+				Status:  http.StatusBadRequest,
+				Message: err.Error(),
+			}
+		}
+		id := req.Model.GetId()
+		val, ok := req.Params[id]
+		if !ok {
+			return stmt, frudError.DriverError{
+				Status:  http.StatusBadRequest,
+				Message: "No ID found in request",
+			}
+		}
+		stmt = fmt.Sprintf(`MATCH (n: %s { %s:"%s" }) SET %s`, req.Type, id, val, makePutStmt(req.Params))
+	}
+	return stmt, nil
+
+}
+
 func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 
 	log.WithFields(logHelper(req)).Info("Database request made")
@@ -98,40 +119,11 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		return nil, err
 	}
 
-	var stmt string
-
-	switch strings.ToLower(req.Method) {
-	case "post":
-		stmt = MakePostStatement(req)
-	case "get":
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Queries, req.Model))
-	case "delete":
-		vals := makeValStmt(req.Params, req.Model)
-		if vals == "" {
-			return nil, frudError.DriverError{
-				Status:  http.StatusBadRequest,
-				Message: "Bad request",
-			}
-		}
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DETACH DELETE (n)`, req.Type, vals)
-	case "put":
-		err := req.FollowsModel()
-		if err != nil {
-			return nil, frudError.DriverError{
-				Status:  http.StatusBadRequest,
-				Message: err.Error(),
-			}
-		}
-		id := req.Model.GetId()
-		val, ok := req.Params[id]
-		if !ok {
-			return nil, frudError.DriverError{
-				Status:  http.StatusBadRequest,
-				Message: "No ID found in request",
-			}
-		}
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s:"%s" }) SET %s`, req.Type, id, val, makePutStmt(req.Params))
+	stmt, err := createStatement(req)
+	if err != nil {
+		return nil, err
 	}
+
 	log.
 		WithField("statement", stmt).
 		WithFields(logHelper(req)).
@@ -143,7 +135,8 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 	if err != nil {
 		return nil, db.ConvertToDriverError(err)
 	}
-	switch req.Method {
+
+	switch strings.ToLower(req.Method) {
 	case "post", "delete", "put":
 		_, err := stmtPrepared.ExecNeo(nil)
 		return nil, db.ConvertToDriverError(err)
@@ -152,16 +145,9 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		r, _, _ := result.All()
 		return r, db.ConvertToDriverError(err)
 	}
-	return nil, nil
-}
 
-// func (db *Neo) Connect() interface{} {
-// 	driver := bolt.NewDriver()
-// 	connection, err := driver.OpenNeo(fmt.Sprintf("bolt://%s:%s@%s:%d",
-// 		db.Conf.User, db.Conf.Password, db.Conf.Hostname, db.Conf.Port))
-// 	if err != nil {
-// 		log.Fatal(err)
-// 		panic(err)
-// 	}
-// 	return connection
-// }
+	return nil, frudError.DriverError{
+		Status:  http.StatusBadRequest,
+		Message: "Bad Request",
+	}
+}

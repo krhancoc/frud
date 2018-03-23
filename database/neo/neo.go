@@ -48,14 +48,6 @@ func CreateNeo(conf config.Configuration) (config.Driver, error) {
 
 }
 
-func makePutStmt(vals map[string]string) string {
-	stmt := []string{}
-	for key, val := range vals {
-		stmt = append(stmt, fmt.Sprintf(`n.%s = "%s"`, key, val))
-	}
-	return strings.Join(stmt, ",")
-}
-
 func (db Neo) ConvertToDriverError(err error) error {
 
 	if err == nil {
@@ -72,40 +64,15 @@ func (db Neo) ConvertToDriverError(err error) error {
 
 func createStatement(req *config.DBRequest) (string, error) {
 
-	var stmt string
 	switch strings.ToLower(req.Method) {
 	case "post":
-		stmt = MakePostStatement(req)
-	case "get":
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) RETURN (n)`, req.Type, makeValStmt(req.Queries, req.Model))
-	case "delete":
-		vals := makeValStmt(req.Params, req.Model)
-		if vals == "" {
-			return stmt, frudError.DriverError{
-				Status:  http.StatusBadRequest,
-				Message: "Bad request",
-			}
-		}
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s }) DETACH DELETE (n)`, req.Type, vals)
-	case "put":
-		err := req.FollowsModel()
-		if err != nil {
-			return stmt, frudError.DriverError{
-				Status:  http.StatusBadRequest,
-				Message: err.Error(),
-			}
-		}
-		id := req.Model.GetId()
-		val, ok := req.Params[id]
-		if !ok {
-			return stmt, frudError.DriverError{
-				Status:  http.StatusBadRequest,
-				Message: "No ID found in request",
-			}
-		}
-		stmt = fmt.Sprintf(`MATCH (n: %s { %s:"%s" }) SET %s`, req.Type, id, val, makePutStmt(req.Params))
+		return CreateCypher(req).
+			Match().ForeignKeys().
+			Create().Params().
+			Relations().
+			String(), nil
 	}
-	return stmt, nil
+	return "", nil
 
 }
 

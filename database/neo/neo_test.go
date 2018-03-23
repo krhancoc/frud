@@ -9,7 +9,7 @@ import (
 
 var req = &config.DBRequest{
 	Method: "post",
-	Type:   "test",
+	Type:   "meeting",
 	Model: []*config.Field{
 		&config.Field{
 			Key:        "attending",
@@ -17,30 +17,32 @@ var req = &config.DBRequest{
 			ForeignKey: "name",
 		},
 		&config.Field{
-			Key:        "meetings",
+			Key:        "nextup",
 			ValueType:  "meeting",
 			ForeignKey: "date",
 		},
 		&config.Field{
 			Key:       "another",
 			ValueType: "string",
+			Options:   []string{"id"},
 		},
 	},
 	Params: map[string]string{
 		"attending": "ken",
-		"meetings":  "datehere",
+		"nextup":    "datehere",
 		"another":   "anotherthing",
 	},
 	Queries: map[string]string{
 		"attending": "ken",
-		"meetings":  "datehere",
+		"nextup":    "datehere",
 		"another":   "anotherthing",
 	},
 }
 
 func TestCypher(t *testing.T) {
 	cypher := neo.CreateCypher(req)
-	println(cypher.Match().ForeignKeys().Match().ForeignKeys().ToString())
+	println(cypher.Match().ForeignKeys().Match().ForeignKeys().String())
+	println(cypher.Match().ForeignKeys().Create().Params().Relations().String())
 	t.Fail()
 
 }

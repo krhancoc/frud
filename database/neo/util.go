@@ -2,8 +2,6 @@ package neo
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/krhancoc/frud/config"
 	log "github.com/sirupsen/logrus"
@@ -59,21 +57,4 @@ func logHelper(req *config.DBRequest) log.Fields {
 		"params":  req.Params,
 		"queries": req.Queries,
 	}
-}
-
-func makeValStmt(vals map[string]string, model []*config.Field) string {
-
-	var entries []string
-	for _, field := range model {
-		if val, ok := vals[field.Key]; ok {
-			switch field.ValueType {
-			case "int":
-				i, _ := strconv.ParseInt(val, 10, 32)
-				entries = append(entries, fmt.Sprintf(`%s:%d`, field.Key, i))
-			default:
-				entries = append(entries, fmt.Sprintf(`%s:"%s"`, field.Key, val))
-			}
-		}
-	}
-	return strings.Join(entries, ",")
 }

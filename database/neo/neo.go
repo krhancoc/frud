@@ -62,7 +62,7 @@ func (db Neo) ConvertToDriverError(err error) error {
 	}
 }
 
-func createStatement(req *config.DBRequest) (string, error) {
+func createStatement(req *config.DBRequest) string {
 
 	switch strings.ToLower(req.Method) {
 	case "post":
@@ -70,17 +70,16 @@ func createStatement(req *config.DBRequest) (string, error) {
 			Match().ForeignKeys().
 			Create().Params().
 			Relations().
-			String(), nil
+			String()
 	case "get":
-		//return CreateCypher(req).
-		//	Match().Queries().String(), nil
+		return CreateCypher(req).Match().Queries().Return().String()
 	case "put":
 		// return CreateCypher(req).Change().String(), nil
 	case "delete":
-		//	return CreateCypher(req).
-		//		Match().Params().Delete().String(), nil
+		return CreateCypher(req).
+			Match().Params().Delete().String()
 	}
-	return "", nil
+	return ""
 
 }
 
@@ -94,10 +93,8 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		return nil, err
 	}
 
-	stmt, err := createStatement(req)
-	if err != nil {
-		return nil, err
-	}
+	stmt := createStatement(req)
+	println(stmt)
 
 	log.
 		WithField("statement", stmt).
@@ -117,8 +114,12 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		return nil, db.ConvertToDriverError(err)
 	case "get":
 		result, err := stmtPrepared.QueryNeo(nil)
+		if err != nil {
+			return nil, db.ConvertToDriverError(err)
+		}
 		r, _, _ := result.All()
-		return r, db.ConvertToDriverError(err)
+		return r, nil
+
 	}
 
 	return nil, frudError.DriverError{

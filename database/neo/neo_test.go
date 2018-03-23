@@ -61,6 +61,8 @@ func TestCypher(t *testing.T) {
 	println(cypher.Match().ForeignKeys().Create().Params().Relations().String())
 	println(cypherTwo.Create().Params().String())
 	println(cypherTwo.Match().ForeignKeys().Create().Params().Relations().String())
+	println(cypherTwo.Match().Params().Delete().String())
+	println(cypher.Match().Queries().Return().String())
 	t.Fail()
 
 }

@@ -7,6 +7,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func CreateWith(vars int) *Command {
+	chars := []interface{}{}
+	i := 0
+	for i = 0; i < vars; i++ {
+		chars = append(chars, string(characters[i]))
+	}
+	return &Command{
+		Type:       "WITH",
+		Statements: chars,
+	}
+}
+
 func (db *Neo) createConstraints(cons []*constraint) error {
 	conn := *db.Connection
 	for _, c := range cons {

@@ -7,26 +7,13 @@ import (
 	"github.com/krhancoc/frud/config"
 )
 
-type Identifiers map[string]interface{}
+//TODO: Still doesnt recognize other types - only strings currently.  Need to bring in creating cypher with proper type.
+var characters = "abcdefghijklmnopqrxtuv"
 
-type Command struct {
-	Type       string
-	Req        *config.DBRequest
-	Statements []interface{}
-	storage    []*Command
-	Vars       int
-}
+type Variable byte
 
-type Relation struct {
-	Base         byte
-	RelationName string
-	Head         byte
-}
-
-type Statement struct {
-	Variable byte
-	Label    string
-	Iden     Identifiers
+func (v Variable) String() string {
+	return fmt.Sprintf("(%c)", v)
 }
 
 type Cypher struct {
@@ -35,7 +22,41 @@ type Cypher struct {
 	Vars       int
 }
 
-var characters = "abcdefghijklmnopqrxtuv"
+func (m *Command) findVariable(t string, id string, value string) byte {
+	for _, i := range m.Statements {
+		stmt, ok := i.(*Statement)
+		if !ok {
+			continue
+		}
+		f := stmt.findVariable(t, id, value)
+		if f != 0 {
+			return f
+		}
+	}
+	return 0
+}
+
+func (c *Cypher) paddNext(command *Command) *Cypher {
+	if len(command.Statements) == 0 {
+		return &Cypher{
+			Req:        c.Req,
+			Vars:       c.Vars,
+			Statements: c.Statements,
+		}
+	}
+	if len(c.Statements) > 0 {
+		return &Cypher{
+			Req:        c.Req,
+			Vars:       c.Vars,
+			Statements: append(c.Statements, CreateWith(c.Vars), command),
+		}
+	}
+	return &Cypher{
+		Req:        c.Req,
+		Vars:       c.Vars,
+		Statements: append(c.Statements, command),
+	}
+}
 
 func (c *Cypher) Match() *Command {
 	return &Command{
@@ -53,32 +74,6 @@ func (c *Cypher) Create() *Command {
 		storage: c.Statements,
 		Vars:    c.Vars,
 	}
-}
-func (m *Command) findVariable(t string, id string, value string) byte {
-	for _, i := range m.Statements {
-		stmt, ok := i.(*Statement)
-		if !ok {
-			continue
-		}
-		f := stmt.findVariable(t, id, value)
-		if f != 0 {
-			return f
-		}
-	}
-	return 0
-}
-
-func (m *Statement) findVariable(t string, id string, value string) byte {
-	if t == m.Label {
-		if v, ok := m.Iden[id]; ok && v == value {
-			return m.Variable
-		}
-	}
-	return 0
-}
-
-func (r *Relation) String() string {
-	return fmt.Sprintf(`(%c)-[:%s]->(%c)`, r.Base, r.RelationName, r.Head)
 }
 
 func (c *Cypher) Relations() *Cypher {
@@ -110,6 +105,7 @@ func (c *Cypher) Relations() *Cypher {
 			}
 		}
 	}
+
 	command := &Command{
 		Type:       "CREATE",
 		Statements: relations,
@@ -117,148 +113,40 @@ func (c *Cypher) Relations() *Cypher {
 		Req:        c.Req,
 		Vars:       c.Vars,
 	}
-	if len(relations) == 0 {
-		return &Cypher{
-			Req:        c.Req,
-			Vars:       c.Vars,
-			Statements: c.Statements,
-		}
-	}
-	if len(c.Statements) > 0 {
-		chars := []interface{}{}
-		i := 0
-		for i = 0; i < c.Vars; i++ {
-			chars = append(chars, string(characters[i]))
-		}
-		with := &Command{
-			Type:       "WITH",
-			Statements: chars,
-		}
-		return &Cypher{
-			Req:        c.Req,
-			Vars:       c.Vars,
-			Statements: append(c.Statements, with, command),
-		}
-	}
-	return &Cypher{
-		Req:        c.Req,
-		Vars:       c.Vars,
-		Statements: append(c.Statements, command),
-	}
+	return c.paddNext(command)
 
 }
 
-func (m *Command) Params() *Cypher {
-
-	stmts := []interface{}{}
-	newVars := m.Vars
-	for _, val := range m.Req.Model.Atomic() {
-		if v, ok := m.Req.Params[val.Key]; ok {
-			stmts = append(stmts, &Statement{
-				Variable: characters[newVars],
-				Label:    m.Req.Type,
-				Iden: map[string]interface{}{
-					val.Key: v,
-				},
-			})
-			newVars++
-		}
-	}
-	m.Statements = stmts
-	if len(stmts) == 0 {
-		return &Cypher{
-			Req:        m.Req,
-			Vars:       newVars,
-			Statements: m.storage,
-		}
-	}
-	if len(m.storage) > 0 {
-		chars := []interface{}{}
-		i := 0
-		for i = 0; i < m.Vars; i++ {
-			chars = append(chars, string(characters[i]))
-		}
-		with := &Command{
-			Type:       "WITH",
-			Statements: chars,
-		}
-		return &Cypher{
-			Req:        m.Req,
-			Vars:       newVars,
-			Statements: append(m.storage, with, m),
-		}
-	}
-	return &Cypher{
-		Req:        m.Req,
-		Vars:       newVars,
-		Statements: append(m.storage, m),
-	}
+func (c *Cypher) Delete() *Cypher {
+	return c.end("DETACH DELETE")
 }
 
-func (m *Command) ForeignKeys() *Cypher {
-	stmts := []interface{}{}
-	newVars := m.Vars
-	for _, val := range m.Req.Model.ForeignKeys() {
-		if v, ok := m.Req.Params[val.Key]; ok {
-			stmts = append(stmts, &Statement{
-				Variable: characters[newVars],
-				Label:    val.ValueType,
-				Iden: map[string]interface{}{
-					val.ForeignKey: v,
-				},
-			})
-			newVars++
-		}
-	}
-	m.Statements = stmts
-	if len(stmts) == 0 {
-		return &Cypher{
-			Req:        m.Req,
-			Vars:       newVars,
-			Statements: m.storage,
-		}
-	}
-	if len(m.storage) > 0 {
-		chars := []interface{}{}
-		i := 0
-		for i = 0; i < m.Vars; i++ {
-			chars = append(chars, string(characters[i]))
-		}
-		with := &Command{
-			Type:       "WITH",
-			Statements: chars,
-		}
-		return &Cypher{
-			Req:        m.Req,
-			Vars:       newVars,
-			Statements: append(m.storage, with, m),
-		}
-	}
-	return &Cypher{
-		Req:        m.Req,
-		Vars:       newVars,
-		Statements: append(m.storage, m),
-	}
+func (c *Cypher) Return() *Cypher {
+	println("RETURNING")
+	return c.end("RETURN")
 }
 
-func (s Identifiers) String() string {
-	stmts := []string{}
-	for key, val := range s {
-		stmts = append(stmts, fmt.Sprintf(`%s:"%v"`, key, val))
-	}
-	return strings.Join(stmts, ",")
-}
+func (c *Cypher) end(t string) *Cypher {
 
-func (s *Statement) String() string {
-	return fmt.Sprintf(`(%c:%s { %s })`, s.Variable, s.Label, s.Iden.String())
-}
-
-func (c *Command) String() string {
-	stmts := []string{}
-	for _, statement := range c.Statements {
-		stmts = append(stmts, fmt.Sprintf("%v", statement))
+	id := c.Req.Model.GetId()
+	values := c.Req.Params
+	if t == "RETURN" {
+		values = c.Req.Queries
 	}
-	return c.Type + " " + strings.Join(stmts, ",")
+	for _, command := range c.Statements {
+		f := command.findVariable(c.Req.Type, id, values[id])
+		if f != 0 {
+			command := &Command{
+				Type:       t,
+				Statements: []interface{}{Variable(f)},
+				storage:    c.Statements,
+				Vars:       c.Vars,
+				Req:        c.Req,
+			}
+			return c.paddNext(command)
+		}
+	}
+	return c
 }
 
 func (c *Cypher) String() string {

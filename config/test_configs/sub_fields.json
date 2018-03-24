@@ -14,30 +14,10 @@
     "generics": ["healthcheck"],
     "plugins": [
       {
-        "name": "sub",
-        "path": "/sub",
-        "description": "Tests multiple subfields",
-        "model": [
-          {
-            "key": "name",
-            "value_type": "string",
-            "options": ["id"]
-          },
-          {
-            "key": "otherfield",
-            "value_type": [
-              {
-                "key": "sub1",
-                "value_type": "string"
-              },
-              {
-                "key": "sub1a",
-                "value_type": "string"
-              }
-            ]
-
-          }
-        ]
+        "name": "entry",
+        "path": "/entry",
+        "pathtocompiled": "_plugins/out/entry.so",
+        "pathtocode": "_plugins/main/entry"
       },
       {
         "name": "people",
@@ -50,16 +30,8 @@
             "options": ["id"]
           },
           {
-            "key": "nickname",
-            "value_type": "string"
-          },
-          {
-            "key": "supervisor",
-            "value_type": "people"
-          },
-          {
-            "key": "partner",
-            "value_type": "people"
+            "key": "idnumber",
+            "value_type": "int"
           }
         ]
       },
@@ -70,12 +42,29 @@
         "model": [
           {
             "key": "date",
-            "value_type": "string",
-            "options": ["id"]
+            "value_type": "string"
           },
           {
             "key": "attending",
             "value_type": "people"
+          },
+          {
+            "key": "substructure",
+            "value_type": [
+              {
+                "key": "sub1",
+                "value_type": "int"
+              },
+              {
+                "key": "sub1a",
+                "value_type": [
+                  {
+                    "key": "sub2",
+                    "value_type": "string"
+                  }
+                ]
+              }
+            ]
           }
         ]
       }

@@ -2,6 +2,7 @@ package plug
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -37,23 +38,26 @@ func makeGenericHandler(ctx config.AppContext, plug Plug, fn genericHandler) htt
 	}
 }
 
-func paramsToVal(b []byte) map[string]string {
+func paramsToVal(b []byte) map[string]interface{} {
 
 	var objmap map[string]*json.RawMessage
 	json.Unmarshal(b, &objmap)
 
-	m := make(map[string]string, len(objmap))
+	m := make(map[string]interface{}, len(objmap))
 	for key, value := range objmap {
-		v := (*value)[1 : len(*value)-1]
-		m[key] = string(v)
+		b, _ := value.MarshalJSON()
+		if b[0] == '"' && b[len(b)-1] == '"' {
+			b = b[1 : len(b)-1]
+		}
+		m[key] = string(b)
 	}
 	return m
 
 }
 
-func queryToVal(q url.Values, plugs []*config.Field) map[string]string {
+func queryToVal(q url.Values, plugs []*config.Field) map[string]interface{} {
 
-	vals := make(map[string]string, len(q))
+	vals := make(map[string]interface{}, len(q))
 	for _, plug := range plugs {
 		if val := q.Get(plug.Key); val != "" {
 			vals[plug.Key] = val
@@ -66,6 +70,7 @@ func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, pl
 
 	b, _ := ioutil.ReadAll(req.Body)
 	params := paramsToVal(b)
+	fmt.Printf("%#v", params)
 	queries := queryToVal(req.URL.Query(), plug.Model)
 	log.WithFields(log.Fields{
 		"method": req.Method,

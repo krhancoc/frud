@@ -16,12 +16,12 @@ type Statement struct {
 func (s Identifiers) String() string {
 	stmts := []string{}
 	for key, val := range s {
-		stmts = append(stmts, fmt.Sprintf(`%s:"%v"`, key, val))
+		stmts = append(stmts, fmt.Sprintf(`%s:'%v'`, key, val))
 	}
 	return strings.Join(stmts, ",")
 }
 
-func (m *Statement) findVariable(t string, id string, value string) byte {
+func (m *Statement) findVariable(t string, id string, value interface{}) byte {
 	if t == m.Label {
 		if v, ok := m.Iden[id]; ok && v == value {
 			return m.Variable

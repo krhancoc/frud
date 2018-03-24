@@ -27,12 +27,12 @@ var req = &config.DBRequest{
 			Options:   []string{"id"},
 		},
 	},
-	Params: map[string]string{
+	Params: map[string]interface{}{
 		"attending": "ken",
 		"nextup":    "datehere",
 		"another":   "anotherthing",
 	},
-	Queries: map[string]string{
+	Queries: map[string]interface{}{
 		"attending": "ken",
 		"nextup":    "datehere",
 		"another":   "anotherthing",
@@ -49,7 +49,31 @@ var reqTwo = &config.DBRequest{
 			Options:   []string{"id"},
 		},
 	},
-	Params: map[string]string{
+	Params: map[string]interface{}{
+		"another": "anotherthing",
+	},
+}
+
+var reqThree = &config.DBRequest{
+	Method: "post",
+	Type:   "meeting",
+	Model: []*config.Field{
+		&config.Field{
+			Key: "another",
+			ValueType: []*config.Field{
+				&config.Field{
+					Key:       "hello",
+					ValueType: "string",
+				},
+				&config.Field{
+					Key:       "world",
+					ValueType: "string",
+				},
+			},
+			Options: []string{"id"},
+		},
+	},
+	Params: map[string]interface{}{
 		"another": "anotherthing",
 	},
 }
@@ -57,12 +81,14 @@ var reqTwo = &config.DBRequest{
 func TestCypher(t *testing.T) {
 	cypher := neo.CreateCypher(req)
 	cypherTwo := neo.CreateCypher(reqTwo)
+	cypherThree := neo.CreateCypher(reqThree)
 	println(cypher.Match().ForeignKeys().Match().ForeignKeys().String())
 	println(cypher.Match().ForeignKeys().Create().Params().Relations().String())
 	println(cypherTwo.Create().Params().String())
 	println(cypherTwo.Match().ForeignKeys().Create().Params().Relations().String())
 	println(cypherTwo.Match().Params().Delete().String())
-	println(cypher.Match().Queries().Return().String())
+	println(cypherTwo.Match().Queries().Return().String())
+	println(cypherThree.Match().Params().Return().String())
 	t.Fail()
 
 }

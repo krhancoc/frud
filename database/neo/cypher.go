@@ -22,20 +22,6 @@ type Cypher struct {
 	Vars       int
 }
 
-func (m *Command) findVariable(t string, id string, value string) byte {
-	for _, i := range m.Statements {
-		stmt, ok := i.(*Statement)
-		if !ok {
-			continue
-		}
-		f := stmt.findVariable(t, id, value)
-		if f != 0 {
-			return f
-		}
-	}
-	return 0
-}
-
 func (c *Cypher) paddNext(command *Command) *Cypher {
 	if len(command.Statements) == 0 {
 		return &Cypher{
@@ -93,7 +79,7 @@ func (c *Cypher) Relations() *Cypher {
 	for _, val := range c.Req.Model.ForeignKeys() {
 		if v, ok := c.Req.Params[val.Key]; ok {
 			for _, command := range c.Statements {
-				found := command.findVariable(val.ValueType, val.ForeignKey, v)
+				found := command.findVariable(val.ValueType.(string), val.ForeignKey, v)
 				if found != 0 {
 					relations = append(relations, &Relation{
 						Base:         mainVar,
@@ -122,7 +108,6 @@ func (c *Cypher) Delete() *Cypher {
 }
 
 func (c *Cypher) Return() *Cypher {
-	println("RETURNING")
 	return c.end("RETURN")
 }
 

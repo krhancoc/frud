@@ -2,13 +2,12 @@ package config
 
 import (
 	"fmt"
-	"strconv"
 )
 
 type DBRequest struct {
 	Method  string
-	Params  map[string]string
-	Queries map[string]string
+	Params  map[string]interface{}
+	Queries map[string]interface{}
 	Type    string
 	Model   Fields
 }
@@ -18,8 +17,8 @@ func (req *DBRequest) Validate() error {
 		if val, ok := req.Params[field.Key]; ok {
 			switch field.ValueType {
 			case "int":
-				_, err := strconv.ParseInt(val, 10, 32)
-				if err != nil {
+				_, ok := (val).(int)
+				if !ok {
 					return fmt.Errorf("Cannot convert to value type %s", val)
 				}
 			default:

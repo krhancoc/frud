@@ -4,8 +4,8 @@ import "fmt"
 
 type Fields []*Field
 
-func (f Fields) ToMap() map[string]string {
-	m := make(map[string]string, len(f))
+func (f Fields) ToMap() map[string]interface{} {
+	m := make(map[string]interface{}, len(f))
 	for _, field := range f {
 		m[field.Key] = field.ValueType
 	}

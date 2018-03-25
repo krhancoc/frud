@@ -1,3 +1,5 @@
+// Package config is the package that holds all the configurable structures and functions.
+// Its main purpose is to allow users to load a configuration from a json file.
 package config
 
 import (
@@ -5,6 +7,8 @@ import (
 	"io/ioutil"
 )
 
+// LoadConfig is the main way of interacting and creating a configuration. This will create and validate a
+// configuration from a filename.
 func LoadConfig(filename string) (Configuration, error) {
 	configuration := Configuration{}
 	raw, err := ioutil.ReadFile(filename)

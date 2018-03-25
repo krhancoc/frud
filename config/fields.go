@@ -2,8 +2,10 @@ package config
 
 import "fmt"
 
+// Fields is the array version of Field
 type Fields []*Field
 
+// ToMap converts the fields object into a map with each fields key as the map key.
 func (f Fields) ToMap() map[string]interface{} {
 	m := make(map[string]interface{}, len(f))
 	for _, field := range f {
@@ -12,7 +14,9 @@ func (f Fields) ToMap() map[string]interface{} {
 	return m
 }
 
-func (f Fields) GetId() string {
+// GetID retrieves the key of the field with the "id" option set.  This option can only be set
+// On one field on any given data model.
+func (f Fields) GetID() string {
 	for _, field := range f {
 		for _, option := range field.Options {
 			if option == "id" {
@@ -23,6 +27,8 @@ func (f Fields) GetId() string {
 	return ""
 }
 
+// ForeignKeys will retrieve all the fields that are not atomic types but rather are types
+// that are defined within the model configuration itself.
 func (f Fields) ForeignKeys() Fields {
 	keys := []*Field{}
 	for _, val := range f {
@@ -33,6 +39,7 @@ func (f Fields) ForeignKeys() Fields {
 	return keys
 }
 
+// Atomic will grab all fields of atomic types, meaning - string, int, int64, etc.
 func (f Fields) Atomic() Fields {
 	keys := []*Field{}
 	for _, val := range f {

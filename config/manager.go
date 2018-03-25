@@ -2,6 +2,9 @@ package config
 
 import "fmt"
 
+// ManagerConfig is config object that will hold everything todo with the endpoints itself, including
+// the datamodels, as well as the generic endpoints that will be set.  Things like healthcheck and eventually,
+// the login endpoint
 type ManagerConfig struct {
 	Generics []string      `json:"generics"`
 	Plugs    []*PlugConfig `json:"plugins"`
@@ -28,7 +31,7 @@ func (conf *ManagerConfig) collectTypeIdMap() (map[string]string, error) {
 		if _, ok := types[plug.Name]; ok {
 			return nil, fmt.Errorf("Duplicate plugin name %s", plug.Name)
 		}
-		types[plug.Name] = plug.Model.GetId()
+		types[plug.Name] = plug.Model.GetID()
 	}
 	return types, nil
 }

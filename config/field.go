@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+// Field is the encapsulation of each of the fields of a object within a database. Its the Field of
+// a data model.
 type Field struct {
 	Key        string      `json:"key"`
 	ValueType  interface{} `json:"value_type"`

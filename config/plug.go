@@ -4,6 +4,9 @@ import (
 	"fmt"
 )
 
+// PlugConfig encapsulates everything around the plugin object, this will hold data for both
+// the model method, or code method of setting up your endpoint.
+// TODO: Check if this is the best way
 type PlugConfig struct {
 	PathToCode     string `json:"pathtocode,omitempty"`
 	PathToCompiled string `json:"pathtocompiled,omitempty"`

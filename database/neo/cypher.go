@@ -67,7 +67,7 @@ func (c *Cypher) Relations() *Cypher {
 	var mainVar byte
 
 	for _, command := range c.Statements {
-		id := c.Req.Model.GetId()
+		id := c.Req.Model.GetID()
 		found := command.findVariable(c.Req.Type, id, c.Req.Params[id])
 		if found != 0 {
 			mainVar = found
@@ -113,7 +113,7 @@ func (c *Cypher) Return() *Cypher {
 
 func (c *Cypher) end(t string) *Cypher {
 
-	id := c.Req.Model.GetId()
+	id := c.Req.Model.GetID()
 	values := c.Req.Params
 	if t == "RETURN" {
 		values = c.Req.Queries

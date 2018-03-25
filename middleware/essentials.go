@@ -1,3 +1,5 @@
+// Package middleware will hold the middleware objects used by the frud framework.
+// Future middleware will be the authentication middleware
 package middleware
 
 import (

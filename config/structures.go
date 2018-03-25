@@ -13,6 +13,8 @@ var allowedTypes = []string{
 	"string",
 }
 
+// Driver interface is what all database drivers must implement, it allows the server
+// to interact with the database without actually caring what the database actually is.
 type Driver interface {
 	MakeRequest(*DBRequest) (interface{}, error)
 	ConvertToDriverError(error) error
@@ -40,10 +42,4 @@ type AppContext struct {
 	Render  *render.Render
 	Version string
 	Port    string
-}
-
-type Endpoint struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Path        string `json:"path"`
 }

@@ -26,11 +26,16 @@ var req = &config.DBRequest{
 			ValueType: "string",
 			Options:   []string{"id"},
 		},
+		&config.Field{
+			Key:       "here",
+			ValueType: "string",
+		},
 	},
 	Params: map[string]interface{}{
 		"attending": "ken",
 		"nextup":    "datehere",
 		"another":   "anotherthing",
+		"here":      "HEY HELLO",
 	},
 	Queries: map[string]interface{}{
 		"attending": "ken",
@@ -89,6 +94,8 @@ func TestCypher(t *testing.T) {
 	println(cypherTwo.Match().Params().Delete().String())
 	println(cypherTwo.Match().Queries().Return().String())
 	println(cypherThree.Match().Params().Return().String())
+	println(cypher.Match().Params().String())
+	println(cypher.MatchID().Set().String())
 	t.Fail()
 
 }

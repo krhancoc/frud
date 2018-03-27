@@ -110,10 +110,26 @@ func (m *Command) findVariable(t string, id string, value interface{}) byte {
 	return 0
 }
 
+func setHelper(i interface{}) string {
+	stmt := i.(*Statement)
+	var equals []string
+	for key, val := range stmt.Iden {
+		equals = append(equals, fmt.Sprintf(`%c.%s = "%s"`, stmt.Variable, key, val))
+	}
+	return strings.Join(equals, ",")
+}
+
 func (c *Command) String() string {
 	stmts := []string{}
 	for _, statement := range c.Statements {
-		stmts = append(stmts, fmt.Sprintf("%v", statement))
+		var str string
+		if c.Type == "SET" {
+			str = fmt.Sprintf("%s", setHelper(statement))
+		} else {
+			str = fmt.Sprintf("%v", statement)
+		}
+		stmts = append(stmts, str)
 	}
+
 	return c.Type + " " + strings.Join(stmts, ",")
 }

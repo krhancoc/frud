@@ -53,6 +53,64 @@ func (c *Cypher) Match() *Command {
 	}
 }
 
+func (c *Cypher) MatchID() *Cypher {
+	id := c.Req.Model.GetID()
+	if val, ok := c.Req.Params[id]; ok {
+		return &Cypher{
+			Req: c.Req,
+			Statements: append(c.Statements, &Command{
+				Type: "MATCH",
+				Req:  c.Req,
+				Statements: []interface{}{
+					&Statement{
+						Variable: characters[c.Vars],
+						Label:    c.Req.Type,
+						Iden: map[string]interface{}{
+							id: val,
+						},
+					},
+				},
+			}),
+			Vars: c.Vars + 1,
+		}
+	}
+	return nil
+}
+
+func (c *Cypher) findVariable(t string, id string, value interface{}) byte {
+	for _, command := range c.Statements {
+		if f := command.findVariable(t, id, value); f != 0 {
+			return f
+		}
+	}
+	return 0
+}
+
+func (c *Cypher) Set() *Cypher {
+	id := c.Req.Model.GetID()
+	iden := make(map[string]interface{}, len(c.Req.Params))
+	for _, fields := range c.Req.Model.Atomic() {
+		if val, ok := c.Req.Params[fields.Key]; ok && fields.Key != id {
+			iden[fields.Key] = val
+		}
+	}
+
+	return &Cypher{
+		Req: c.Req,
+		Statements: append(c.Statements, &Command{
+			Type: "SET",
+			Req:  c.Req,
+			Statements: []interface{}{
+				&Statement{
+					Variable: c.findVariable(c.Req.Type, id, c.Req.Params[id]),
+					Label:    c.Req.Type,
+					Iden:     iden,
+				},
+			},
+			Vars: c.Vars,
+		}),
+	}
+}
 func (c *Cypher) Create() *Command {
 	return &Command{
 		Type:    "CREATE",

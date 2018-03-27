@@ -1,3 +1,4 @@
+// Package frud
 package main
 
 import (

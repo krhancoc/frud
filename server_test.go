@@ -15,6 +15,8 @@ var endpoints = []struct {
 }{
 	{"POST", "people", `{"name":"bob"}`, 201},
 	{"POST", "people", `{"name":"tim"}`, 201},
+	{"POST", "people", `{"name":"tim"}`, 409},
+	{"PUT", "people", `{"name":"tim", "nickname": "Scott"}`, 201},
 	{"POST", "people", `{"name":"testEntry", "nickname": "bigTuna", "supervisor":"bob", "partner":"tim" }`, 201},
 	{"GET", "people?name=testEntry", ``, 200},
 	{"POST", "meeting", `{"date":"March 21st", "attending": "testEntry"}`, 201},

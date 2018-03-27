@@ -1,3 +1,4 @@
+// Package neo holds all the logic around instantiating a Driver interface around the Neo4J database architecture
 package neo
 
 import (
@@ -16,6 +17,7 @@ const (
 	ConstraintFailure = "Neo.ClientError.Schema.ConstraintValidationFailed"
 )
 
+// Neo is the main neo struct hold the plugins and connection object
 type Neo struct {
 	Plugins    []*config.PlugConfig
 	Connection *bolt.Conn
@@ -26,6 +28,7 @@ type constraint struct {
 	Field string
 }
 
+// CreateNeo will create a Neo Driver from a configuration object
 func CreateNeo(conf config.Configuration) (config.Driver, error) {
 
 	var driver config.Driver
@@ -48,6 +51,7 @@ func CreateNeo(conf config.Configuration) (config.Driver, error) {
 
 }
 
+// ConvertToDriverError will convert a Neo4J connector error to a generic Driver error.
 func (db Neo) ConvertToDriverError(err error) error {
 
 	if err == nil {
@@ -74,7 +78,7 @@ func createStatement(req *config.DBRequest) string {
 	case "get":
 		return CreateCypher(req).Match().Queries().Return().String()
 	case "put":
-		// return CreateCypher(req).Change().String(), nil
+		return CreateCypher(req).MatchID().Set().String()
 	case "delete":
 		return CreateCypher(req).
 			Match().Params().Delete().String()

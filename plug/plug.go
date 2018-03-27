@@ -1,3 +1,6 @@
+// Package plug encapsulates the plugin style that this framework uses.  Using either the code method,
+// which relies on the go plugin package, as well as the package package (yes.) Or the configuration style
+// of defining models within a json file.  Plugins are added to a pluginManager which is added to the server.
 package plug
 
 import (
@@ -11,6 +14,12 @@ import (
 	"github.com/fatih/color"
 	"github.com/krhancoc/frud/config"
 )
+
+type endpoint struct {
+	Name        string
+	Path        string
+	Description string
+}
 
 func checkUnimplimented(obj interface{}, i interface{}) []string {
 	var unimplemented []string
@@ -53,7 +62,7 @@ func plugPack(conf *config.PlugConfig) (*plugin.Plugin, *types.Package, error) {
 }
 
 func (w *Plug) setDefinition(obj interface{}) {
-	data := reflect.ValueOf(obj).Elem().FieldByName("Data").Interface().(*config.Endpoint)
+	data := reflect.ValueOf(obj).Elem().FieldByName("Data").Interface().(*endpoint)
 	w.Name = data.Name
 	w.Description = data.Description
 	w.Path = data.Path

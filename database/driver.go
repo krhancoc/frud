@@ -3,6 +3,8 @@
 package database
 
 import (
+	"fmt"
+
 	"github.com/krhancoc/frud/config"
 	"github.com/krhancoc/frud/database/neo"
 )
@@ -13,6 +15,6 @@ func CreateDatabase(conf config.Configuration) (config.Driver, error) {
 	case "neo4j":
 		return neo.CreateNeo(conf)
 	default:
-		return nil, nil
+		return nil, fmt.Errorf("Unrecognized database")
 	}
 }

@@ -1,15 +1,22 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Fields is the array version of Field
 type Fields []*Field
 
 // ToMap converts the fields object into a map with each fields key as the map key.
 func (f Fields) ToMap() map[string]interface{} {
-	m := make(map[string]interface{}, len(f))
+	m := make(map[string]interface{})
 	for _, field := range f {
-		m[field.Key] = field.ValueType
+		subfields, ok := field.ValueType.(Fields)
+		if ok {
+			m[field.Key] = subfields.ToMap()
+		} else {
+			m[field.Key] = field.ValueType
+		}
 	}
 	return m
 }
@@ -29,22 +36,36 @@ func (f Fields) GetID() string {
 
 // ForeignKeys will retrieve all the fields that are not atomic types but rather are types
 // that are defined within the model configuration itself.
-func (f Fields) ForeignKeys() Fields {
-	keys := []*Field{}
+func (f Fields) ForeignKeys() map[string]*Field {
+	keys := make(map[string]*Field)
 	for _, val := range f {
-		if val.ForeignKey != "" {
-			keys = append(keys, val)
+		subField, ok := val.ValueType.([]*Field)
+		if ok {
+			for k, v := range Fields(subField).ForeignKeys() {
+				keys[val.Key+"-"+k] = v
+			}
+		} else {
+			if val.ForeignKey != "" {
+				keys[val.Key] = val
+			}
 		}
 	}
 	return keys
 }
 
 // Atomic will grab all fields of atomic types, meaning - string, int, int64, etc.
-func (f Fields) Atomic() Fields {
-	keys := []*Field{}
+func (f Fields) Atomic() map[string]*Field {
+	keys := make(map[string]*Field)
 	for _, val := range f {
-		if val.ForeignKey == "" {
-			keys = append(keys, val)
+		subField, ok := val.ValueType.(Fields)
+		if ok {
+			for k, v := range subField.Atomic() {
+				keys[val.Key+"-"+k] = v
+			}
+		} else {
+			if val.ForeignKey == "" {
+				keys[val.Key] = val
+			}
 		}
 	}
 	return keys

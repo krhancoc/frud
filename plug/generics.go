@@ -2,7 +2,6 @@ package plug
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -48,8 +47,10 @@ func paramsToVal(b []byte) map[string]interface{} {
 		b, _ := value.MarshalJSON()
 		if b[0] == '"' && b[len(b)-1] == '"' {
 			b = b[1 : len(b)-1]
+			m[key] = string(b)
+		} else {
+			m[key] = paramsToVal(b)
 		}
-		m[key] = string(b)
 	}
 	return m
 
@@ -70,7 +71,6 @@ func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, pl
 
 	b, _ := ioutil.ReadAll(req.Body)
 	params := paramsToVal(b)
-	fmt.Printf("%#v", params)
 	queries := queryToVal(req.URL.Query(), plug.Model)
 	log.WithFields(log.Fields{
 		"method": req.Method,
@@ -98,11 +98,13 @@ func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, pl
 		ctx.Render.JSON(w, http.StatusCreated, Message{
 			Status:  http.StatusCreated,
 			Message: "Created",
+			Results: result,
 		})
 	case "delete":
 		ctx.Render.JSON(w, http.StatusOK, Message{
 			Status:  http.StatusCreated,
 			Message: "Created",
+			Results: result,
 		})
 	case "get":
 		ctx.Render.JSON(w, http.StatusOK, result)

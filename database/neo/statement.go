@@ -21,10 +21,12 @@ func (s Identifiers) String() string {
 	return strings.Join(stmts, ",")
 }
 
-func (m *Statement) findVariable(t string, id string, value interface{}) byte {
+func (m *Statement) findVariable(t string, value map[string]interface{}) byte {
 	if t == m.Label {
-		if v, ok := m.Iden[id]; ok && v == value {
-			return m.Variable
+		for key, _ := range value {
+			if _, ok := m.Iden[key]; ok {
+				return m.Variable
+			}
 		}
 	}
 	return 0

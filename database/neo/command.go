@@ -46,6 +46,26 @@ func (m *Command) Queries() *Cypher {
 	return m.context("queries")
 }
 
+func (m *Command) subStatements(parent string, iden map[string]interface{}, submap map[string]interface{}) {
+	depth := strings.Split(parent, "_")
+	context := m.Req.Model.ToMap()
+	for _, value := range depth {
+		context = config.Fields(context[value].([]*config.Field)).ToMap()
+	}
+	for key, val := range submap {
+		if _, ok := context[key]; ok {
+			newKey := parent + "_" + key
+			subsubmap, ok := val.(map[string]interface{})
+			if ok {
+				m.subStatements(newKey, iden, subsubmap)
+			} else {
+				iden[newKey] = val
+			}
+		}
+	}
+	return
+}
+
 func (m *Command) context(values string) *Cypher {
 
 	var requestValues map[string]interface{}
@@ -57,11 +77,16 @@ func (m *Command) context(values string) *Cypher {
 
 	stmts := []interface{}{}
 	newVars := m.Vars
-	iden := make(map[string]interface{}, len(m.Req.Model.Atomic()))
+	iden := make(map[string]interface{})
 
-	for _, val := range m.Req.Model.Atomic() {
-		if v, ok := requestValues[val.Key]; ok {
-			iden[val.Key] = v
+	for key, val := range m.Req.Model.Atomic() {
+		if v, ok := requestValues[key]; ok {
+			submap, ok := v.(map[string]interface{})
+			if ok {
+				m.subStatements(val.Key, iden, submap)
+			} else {
+				iden[key] = v
+			}
 		}
 	}
 	if len(iden) > 0 {
@@ -80,8 +105,8 @@ func (m *Command) ForeignKeys() *Cypher {
 
 	stmts := []interface{}{}
 	newVars := m.Vars
-	for _, val := range m.Req.Model.ForeignKeys() {
-		if v, ok := m.Req.Params[val.Key]; ok {
+	for key, val := range m.Req.Model.ForeignKeys() {
+		if v, ok := m.Req.Params[key]; ok {
 			stmts = append(stmts, &Statement{
 				Variable: characters[newVars],
 				Label:    val.ValueType.(string),
@@ -96,13 +121,13 @@ func (m *Command) ForeignKeys() *Cypher {
 	return m.paddNext(newVars)
 }
 
-func (m *Command) findVariable(t string, id string, value interface{}) byte {
+func (m *Command) findVariable(t string, value map[string]interface{}) byte {
 	for _, i := range m.Statements {
 		stmt, ok := i.(*Statement)
 		if !ok {
 			continue
 		}
-		f := stmt.findVariable(t, id, value)
+		f := stmt.findVariable(t, value)
 		if f != 0 {
 			return f
 		}

@@ -27,8 +27,8 @@
             "key": "otherfield",
             "value_type": [
               {
-                "key": "sub1",
-                "value_type": "string"
+                "key": "person",
+                "value_type": "people"
               },
               {
                 "key": "sub1a",

@@ -17,6 +17,8 @@ type Field struct {
 func (field *Field) validateType(extraTypes map[string]string) error {
 	for key, val := range extraTypes {
 		switch f := field.ValueType.(type) {
+		case Fields:
+			return f.validate(extraTypes, field.Key)
 		case string:
 			if f == key {
 				field.ForeignKey = val

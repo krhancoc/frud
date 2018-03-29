@@ -77,9 +77,9 @@ func (c *Cypher) MatchID() *Cypher {
 	return nil
 }
 
-func (c *Cypher) findVariable(t string, id string, value interface{}) byte {
+func (c *Cypher) findVariable(t string, values map[string]interface{}) byte {
 	for _, command := range c.Statements {
-		if f := command.findVariable(t, id, value); f != 0 {
+		if f := command.findVariable(t, values); f != 0 {
 			return f
 		}
 	}
@@ -102,7 +102,7 @@ func (c *Cypher) Set() *Cypher {
 			Req:  c.Req,
 			Statements: []interface{}{
 				&Statement{
-					Variable: c.findVariable(c.Req.Type, id, c.Req.Params[id]),
+					Variable: c.findVariable(c.Req.Type, c.appValues()),
 					Label:    c.Req.Type,
 					Iden:     iden,
 				},
@@ -111,6 +111,22 @@ func (c *Cypher) Set() *Cypher {
 		}),
 	}
 }
+
+func flatten(m map[string]interface{}) map[string]interface{} {
+	params := make(map[string]interface{})
+	for key, val := range m {
+		newMap, ok := val.(map[string]interface{})
+		if ok {
+			for k, v := range flatten(newMap) {
+				params[key+"-"+k] = v
+			}
+		} else {
+			params[key] = val
+		}
+	}
+	return params
+}
+
 func (c *Cypher) Create() *Command {
 	return &Command{
 		Type:    "CREATE",
@@ -120,13 +136,26 @@ func (c *Cypher) Create() *Command {
 	}
 }
 
+func (c *Cypher) appValues() map[string]interface{} {
+	id := c.Req.Model.GetID()
+	appValues := make(map[string]interface{})
+	for key, val := range c.Req.Params {
+		if strings.HasPrefix(key, id) {
+			appValues[key] = val
+		}
+	}
+	for key, val := range c.Req.Queries {
+		if strings.HasPrefix(key, id) {
+			appValues[key] = val
+		}
+	}
+	return appValues
+}
 func (c *Cypher) Relations() *Cypher {
 
 	var mainVar byte
-
 	for _, command := range c.Statements {
-		id := c.Req.Model.GetID()
-		found := command.findVariable(c.Req.Type, id, c.Req.Params[id])
+		found := command.findVariable(c.Req.Type, c.appValues())
 		if found != 0 {
 			mainVar = found
 			break
@@ -134,14 +163,16 @@ func (c *Cypher) Relations() *Cypher {
 	}
 
 	relations := []interface{}{}
-	for _, val := range c.Req.Model.ForeignKeys() {
-		if v, ok := c.Req.Params[val.Key]; ok {
+	for key, val := range c.Req.Model.ForeignKeys() {
+		if v, ok := c.Req.Params[key]; ok {
 			for _, command := range c.Statements {
-				found := command.findVariable(val.ValueType.(string), val.ForeignKey, v)
+				found := command.findVariable(val.ValueType.(string), map[string]interface{}{
+					val.ForeignKey: v,
+				})
 				if found != 0 {
 					relations = append(relations, &Relation{
 						Base:         mainVar,
-						RelationName: val.Key,
+						RelationName: key,
 						Head:         found,
 					})
 					break
@@ -171,20 +202,18 @@ func (c *Cypher) Return() *Cypher {
 
 func (c *Cypher) end(t string) *Cypher {
 
-	id := c.Req.Model.GetID()
-	values := c.Req.Params
-	if t == "RETURN" {
-		values = c.Req.Queries
-	}
 	for _, command := range c.Statements {
-		f := command.findVariable(c.Req.Type, id, values[id])
-		if f != 0 {
+
+		if command.Type == "MATCH" {
+			f := command.Statements[0].(*Statement).Variable
 			command := &Command{
-				Type:       t,
-				Statements: []interface{}{Variable(f)},
-				storage:    c.Statements,
-				Vars:       c.Vars,
-				Req:        c.Req,
+				Type: t,
+				Statements: []interface{}{
+					Variable(f),
+				},
+				storage: c.Statements,
+				Vars:    c.Vars,
+				Req:     c.Req,
 			}
 			return c.paddNext(command)
 		}
@@ -201,6 +230,7 @@ func (c *Cypher) String() string {
 }
 
 func CreateCypher(req *config.DBRequest) *Cypher {
+	req.Params = flatten(req.Params)
 	return &Cypher{
 		Req:        req,
 		Statements: []*Command{},

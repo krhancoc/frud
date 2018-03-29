@@ -1,6 +1,9 @@
 package neo
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Relation struct {
 	Base         byte
@@ -9,5 +12,6 @@ type Relation struct {
 }
 
 func (r *Relation) String() string {
-	return fmt.Sprintf(`(%c)-[:%s]->(%c)`, r.Base, r.RelationName, r.Head)
+	newRelation := strings.Join(strings.Split(r.RelationName, "-"), "_")
+	return fmt.Sprintf(`(%c)-[:%s]->(%c)`, r.Base, newRelation, r.Head)
 }

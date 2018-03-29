@@ -114,8 +114,13 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 
 	switch strings.ToLower(req.Method) {
 	case "post", "delete", "put":
-		_, err := stmtPrepared.ExecNeo(nil)
-		return nil, db.ConvertToDriverError(err)
+		result, err := stmtPrepared.ExecNeo(nil)
+		if err != nil {
+
+			return nil, db.ConvertToDriverError(err)
+		}
+		num, _ := result.RowsAffected()
+		return num, nil
 	case "get":
 		result, err := stmtPrepared.QueryNeo(nil)
 		if err != nil {

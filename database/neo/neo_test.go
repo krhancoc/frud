@@ -62,13 +62,14 @@ var reqTwo = &config.DBRequest{
 var reqThree = &config.DBRequest{
 	Method: "post",
 	Type:   "meeting",
-	Model: []*config.Field{
+	Model: config.Fields{
 		&config.Field{
 			Key: "another",
-			ValueType: []*config.Field{
+			ValueType: config.Fields{
 				&config.Field{
-					Key:       "hello",
-					ValueType: "string",
+					Key:        "hello",
+					ValueType:  "person",
+					ForeignKey: "name",
 				},
 				&config.Field{
 					Key:       "world",
@@ -79,7 +80,10 @@ var reqThree = &config.DBRequest{
 		},
 	},
 	Params: map[string]interface{}{
-		"another": "anotherthing",
+		"another": map[string]interface{}{
+			"hello": "bob",
+			"world": "yeppers",
+		},
 	},
 }
 
@@ -93,9 +97,9 @@ func TestCypher(t *testing.T) {
 	println(cypherTwo.Match().ForeignKeys().Create().Params().Relations().String())
 	println(cypherTwo.Match().Params().Delete().String())
 	println(cypherTwo.Match().Queries().Return().String())
-	println(cypherThree.Match().Params().Return().String())
 	println(cypher.Match().Params().String())
 	println(cypher.MatchID().Set().String())
+	println(cypherThree.Match().ForeignKeys().Create().Params().Relations().String())
 	t.Fail()
 
 }

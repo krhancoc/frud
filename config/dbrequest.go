@@ -18,8 +18,9 @@ type DBRequest struct {
 // Validate will validate the DBRequest with the model provided to make sure the values are able
 // to convert into the proper values given by the model
 // TODO: Check/Enforce type conversion on fields - int, int64 etc.
-func (req *DBRequest) Validate() error {
-	return req.Model.ValidateParams(req.Params)
+// Returns Delete error, Get error, Post error, put Error,
+func (req *DBRequest) Validate() (error, error, error, error) {
+	return nil, nil, req.Model.ValidateParams(req.Params), nil
 }
 
 // FollowsModel will check to make sure the DBRequest params and queries follow the model attached to

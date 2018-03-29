@@ -37,16 +37,22 @@ func CreateMongo(conf config.Configuration) (config.Driver, error) {
 }
 
 func (db *Mongo) MakeRequest(req *config.DBRequest) (interface{}, error) {
+
 	session := db.Connection.Clone()
 	defer session.Close()
 	collection := session.DB("FRUD").C(req.Type)
 	switch strings.ToLower(req.Method) {
 	case "post":
+		req.Params["_id"] = req.Params[req.Model.GetID()]
 		err := collection.Insert(req.Params)
 		if err != nil {
 			return nil, err
 		}
 		return nil, nil
+	case "get":
+		var results []map[string]interface{}
+		collection.Find(req.Queries).All(&results)
+		return results, nil
 	default:
 		return nil, nil
 	}

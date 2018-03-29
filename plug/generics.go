@@ -69,6 +69,7 @@ func queryToVal(q url.Values, plugs []*config.Field) map[string]interface{} {
 
 func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, plug Plug) {
 
+	req.Method = strings.ToLower(req.Method)
 	b, _ := ioutil.ReadAll(req.Body)
 	params := paramsToVal(b)
 	queries := queryToVal(req.URL.Query(), plug.Model)
@@ -86,9 +87,21 @@ func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, pl
 		Type:    plug.Name,
 		Model:   plug.Model,
 	}
-	err := dbReq.Validate()
-	if err != nil {
-		ctx.Render.JSON(w, http.StatusBadRequest, err.Error())
+	delete, get, post, put := dbReq.Validate()
+	if delete != nil && req.Method == "delete" {
+		ctx.Render.JSON(w, http.StatusBadRequest, delete.Error())
+		return
+	}
+	if get != nil && req.Method == "get" {
+		ctx.Render.JSON(w, http.StatusBadRequest, get.Error())
+		return
+	}
+	if post != nil && req.Method == "post" {
+		ctx.Render.JSON(w, http.StatusBadRequest, post.Error())
+		return
+	}
+	if put != nil && req.Method == "put" {
+		ctx.Render.JSON(w, http.StatusBadRequest, put.Error())
 		return
 	}
 	result, err := ctx.Driver.MakeRequest(dbReq)

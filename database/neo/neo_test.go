@@ -100,9 +100,4 @@ func TestCypher(t *testing.T) {
 	println(cypher.Match().Params().String())
 	println(cypher.MatchID().Set().String())
 	println(cypherThree.Match().ForeignKeys().Create().Params().Relations().String())
-	t.Fail()
-
-}
-func TestPostStatement(t *testing.T) {
-	t.Fail()
 }

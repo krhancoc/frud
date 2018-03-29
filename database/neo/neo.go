@@ -76,7 +76,7 @@ func createStatement(req *config.DBRequest) string {
 			Relations().
 			String()
 	case "get":
-		return CreateCypher(req).Match().Queries().Return().String()
+		return CreateCypher(req).Match().Queries().String() + "-[b]-(c) RETURN a,b,c"
 	case "put":
 		return CreateCypher(req).MatchID().Set().String()
 	case "delete":

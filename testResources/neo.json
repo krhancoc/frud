@@ -4,11 +4,11 @@
     "port": 8080
   },
   "database": {
-    "type": "mongo",
+    "type": "neo4j",
     "hostname": "localhost",
-    "port": 27017,
-    "user": "",
-    "password": ""
+    "port": 7687,
+    "user": "neo4j",
+    "password": "secret"
   },
   "manager": {
     "generics": ["healthcheck"],
@@ -51,13 +51,11 @@
           },
           {
             "key": "nickname",
-            "value_type": "string",
-            "options": ["empty"]
+            "value_type": "string"
           },
           {
             "key": "supervisor",
-            "value_type": "people",
-            "options": ["empty"]
+            "value_type": "people"
           },
           {
             "key": "partner",

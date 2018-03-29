@@ -19,20 +19,7 @@ type DBRequest struct {
 // to convert into the proper values given by the model
 // TODO: Check/Enforce type conversion on fields - int, int64 etc.
 func (req *DBRequest) Validate() error {
-	for _, field := range req.Model {
-		if val, ok := req.Params[field.Key]; ok {
-			switch field.ValueType {
-			case "int":
-				_, ok := (val).(int)
-				if !ok {
-					return fmt.Errorf("Cannot convert to value type %s", val)
-				}
-			default:
-				continue
-			}
-		}
-	}
-	return nil
+	return req.Model.ValidateParams(req.Params)
 }
 
 // FollowsModel will check to make sure the DBRequest params and queries follow the model attached to

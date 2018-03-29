@@ -23,7 +23,7 @@ import (
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 }
 
 type tcpKeepAliveListener struct {
@@ -44,12 +44,12 @@ func (ln tcpKeepAliveListener) Accept() (net.Conn, error) {
 func StartServer(path string) *http.Server {
 	//Load up Logger
 	// Load up database
-	log.Info("Setting up database")
 	conf, err := config.LoadConfig(path)
-	spew.Dump(conf)
+	log.Debug(spew.Sdump(conf))
 	if err != nil {
 		panic(err)
 	}
+	log.Debug("Setting up database")
 	db, err := database.CreateDatabase(conf)
 	if err != nil {
 		panic(err)

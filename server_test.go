@@ -27,7 +27,7 @@ var endpoints = []struct {
 }
 
 func TestServerEndpoints(t *testing.T) {
-	srv := StartServer("config.json")
+	srv := StartServer("testResources/neo.json")
 
 	client := &http.Client{}
 	for _, e := range endpoints {

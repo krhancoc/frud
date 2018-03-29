@@ -14,6 +14,42 @@ type Field struct {
 	ForeignKey string      `json:"foreignkey,omitempty"`
 }
 
+func (field *Field) Validate(val interface{}) error {
+	f, ok := field.ValueType.([]*Field)
+	if ok {
+		switch v := val.(type) {
+		case map[string]interface{}:
+			return Fields(f).ValidateParams(v)
+		default:
+			return fmt.Errorf("Not correct type for field %s", field.Key)
+		}
+	}
+
+	switch val.(type) {
+	case map[string]interface{}:
+		return fmt.Errorf("Not correct type for field %s", field.Key)
+	case int:
+		if field.ValueType.(string) != "int" {
+			return fmt.Errorf("Not correct type for field %s", field.Key)
+		}
+	default:
+		if field.ValueType.(string) != "string" && field.ForeignKey == "" {
+			return fmt.Errorf("Not correct type for field %s", field.Key)
+		}
+	}
+
+	return nil
+}
+
+func (field *Field) IsOptionSet(option string) bool {
+	for _, o := range field.Options {
+		if o == option {
+			return true
+		}
+	}
+	return false
+}
+
 func (field *Field) validateType(extraTypes map[string]string) error {
 	for key, val := range extraTypes {
 		switch f := field.ValueType.(type) {

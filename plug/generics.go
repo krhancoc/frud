@@ -86,6 +86,11 @@ func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, pl
 		Type:    plug.Name,
 		Model:   plug.Model,
 	}
+	err := dbReq.Validate()
+	if err != nil {
+		ctx.Render.JSON(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	result, err := ctx.Driver.MakeRequest(dbReq)
 	if err != nil {
 		e := err.(errors.DriverError)

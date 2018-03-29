@@ -31,7 +31,6 @@ type constraint struct {
 // CreateNeo will create a Neo Driver from a configuration object
 func CreateNeo(conf config.Configuration) (config.Driver, error) {
 
-	var driver config.Driver
 	connection, err := bolt.NewDriver().OpenNeo(fmt.Sprintf("bolt://%s:%s@%s:%d",
 		conf.Database.User, conf.Database.Password, conf.Database.Hostname, conf.Database.Port))
 	if err != nil {
@@ -43,11 +42,9 @@ func CreateNeo(conf config.Configuration) (config.Driver, error) {
 	}
 	err = neo.initModels()
 	if err != nil {
-		return driver, err
+		return neo, err
 	}
-	var temp interface{} = neo
-	driver = temp.(config.Driver)
-	return driver, err
+	return neo, err
 
 }
 
@@ -91,11 +88,6 @@ func (db *Neo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 
 	log.WithFields(logHelper(req)).Info("Database request made")
 	conn := *db.Connection
-
-	err := req.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	stmt := createStatement(req)
 	println(stmt)

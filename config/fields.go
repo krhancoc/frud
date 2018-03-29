@@ -7,6 +7,31 @@ import (
 // Fields is the array version of Field
 type Fields []*Field
 
+func (f Fields) ValidateParams(params map[string]interface{}) error {
+	for _, field := range f {
+		empty := field.IsOptionSet("empty")
+		v, ok := params[field.Key]
+		if ok {
+			err := field.Validate(v)
+			if err != nil {
+				return err
+			}
+		} else if !empty {
+			return fmt.Errorf("Required field %s missing", field.Key)
+		}
+	}
+	return nil
+}
+
+func (f Fields) FindField(key string) *Field {
+	for _, field := range f {
+		if field.Key == key {
+			return field
+		}
+	}
+	return nil
+}
+
 // ToMap converts the fields object into a map with each fields key as the map key.
 func (f Fields) ToMap() map[string]interface{} {
 	m := make(map[string]interface{})

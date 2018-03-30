@@ -88,10 +88,10 @@ var testCases = []struct {
 	},
 }
 
-func TestDBRequest(t *testing.T) {
+func TestPostDBRequest(t *testing.T) {
 	for i, test := range testCases {
 		req.Params = test.params
-		err := req.Validate()
+		_, _, err, _ := req.Validate()
 		if err != nil && test.expected {
 			t.Errorf(err.Error())
 		} else if err == nil && !test.expected {

@@ -2,11 +2,14 @@ package mongo
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/krhancoc/frud/config"
+	"github.com/krhancoc/frud/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type Mongo struct {
@@ -46,21 +49,36 @@ func (db *Mongo) MakeRequest(req *config.DBRequest) (interface{}, error) {
 		req.Params["_id"] = req.Params[req.Model.GetID()]
 		err := collection.Insert(req.Params)
 		if err != nil {
-			return nil, err
+			return nil, db.ConvertToDriverError(err)
+		}
+		return nil, nil
+	case "delete":
+		err := collection.Remove(req.Params)
+		if err != nil {
+			return nil, db.ConvertToDriverError(err)
 		}
 		return nil, nil
 	case "get":
 		var results []map[string]interface{}
 		collection.Find(req.Queries).All(&results)
 		return results, nil
+	case "put":
+		id := req.Params[req.Model.GetID()].(string)
+		err := collection.UpdateId(id, bson.M{"$set": req.Params})
+		if err != nil {
+			return nil, db.ConvertToDriverError(err)
+		}
+		return nil, nil
 	default:
 		return nil, nil
 	}
-	return nil, nil
 }
 
 func (db *Mongo) ConvertToDriverError(err error) error {
-	return nil
+	return errors.DriverError{
+		Status:  http.StatusBadRequest,
+		Message: err.Error(),
+	}
 }
 
 // ConvertToDriverError(error) error

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/codegangsta/negroni"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/krhancoc/frud/config"
 	"github.com/krhancoc/frud/database"
@@ -45,7 +44,6 @@ func StartServer(path string) *http.Server {
 	//Load up Logger
 	// Load up database
 	conf, err := config.LoadConfig(path)
-	log.Debug(spew.Sdump(conf))
 	if err != nil {
 		panic(err)
 	}

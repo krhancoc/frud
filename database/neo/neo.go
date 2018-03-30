@@ -58,7 +58,7 @@ func (db Neo) ConvertToDriverError(err error) error {
 	e := err.(*errors.Error).InnerMost()
 	log.Error(e.Error())
 	return frudError.DriverError{
-		Status:  http.StatusConflict,
+		Status:  http.StatusBadRequest,
 		Message: "Problem with request",
 	}
 }

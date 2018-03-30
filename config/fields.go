@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+
+	"github.com/krhancoc/frud/errors"
 )
 
 // Fields is the array version of Field
@@ -17,7 +19,7 @@ func (f Fields) ValidateParams(params map[string]interface{}) error {
 				return err
 			}
 		} else if !empty {
-			return fmt.Errorf("Required field %s missing", field.Key)
+			return errors.ValidationError{fmt.Sprintf("Required field %s missing", field.Key)}
 		}
 	}
 	return nil
@@ -103,10 +105,14 @@ func (f *Fields) validate(extraTypes map[string]string, name string) error {
 	m := make(map[string]bool, len(*f))
 	for _, field := range *f {
 		if field.Key == "" {
-			return fmt.Errorf(`Missing "key" field for a model object in plugin %s`, name)
+			return errors.ValidationError{
+				fmt.Sprintf(`Missing "key" field for a model object in plugin %s`, name),
+			}
 		}
 		if _, ok := m[field.Key]; ok {
-			return fmt.Errorf(`Duplicate key - %s - value in model for plugin %s`, field.Key, name)
+			return errors.ValidationError{
+				fmt.Sprintf(`Duplicate key - %s - value in model for plugin %s`, field.Key, name),
+			}
 		}
 		err := field.validateType(extraTypes)
 		if err != nil {
@@ -116,7 +122,7 @@ func (f *Fields) validate(extraTypes map[string]string, name string) error {
 		for _, option := range field.Options {
 			if option == "id" {
 				if idFound {
-					return fmt.Errorf("Multiple id's found in model %s", name)
+					return errors.ValidationError{fmt.Sprintf("Multiple id's found in model %s", name)}
 				}
 				idFound = true
 			}

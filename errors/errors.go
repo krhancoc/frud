@@ -10,6 +10,14 @@ type DriverError struct {
 	Message string `json:"message"`
 }
 
+type ValidationError struct {
+	Message string `json:"message"`
+}
+
+func (i ValidationError) Error() string {
+	return i.Message
+}
+
 // Error standard error to string function
 func (i DriverError) Error() string {
 	return fmt.Sprintf("%d error: %s", i.Status, i.Message)

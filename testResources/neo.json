@@ -51,15 +51,18 @@
           },
           {
             "key": "nickname",
-            "value_type": "string"
+            "value_type": "string",
+            "options": ["empty"]
           },
           {
             "key": "supervisor",
-            "value_type": "people"
+            "value_type": "people",
+            "options": ["empty"]
           },
           {
             "key": "partner",
-            "value_type": "people"
+            "value_type": "people",
+            "options": ["empty"]
           }
         ]
       },

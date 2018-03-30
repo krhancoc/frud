@@ -3,6 +3,8 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/krhancoc/frud/errors"
 )
 
 // Field is the encapsulation of each of the fields of a object within a database. Its the Field of
@@ -21,20 +23,20 @@ func (field *Field) Validate(val interface{}) error {
 		case map[string]interface{}:
 			return Fields(f).ValidateParams(v)
 		default:
-			return fmt.Errorf("Not correct type for field %s", field.Key)
+			return errors.ValidationError{fmt.Sprintf("Not correct type for field %s", field.Key)}
 		}
 	}
 
 	switch val.(type) {
 	case map[string]interface{}:
-		return fmt.Errorf("Not correct type for field %s", field.Key)
+		return errors.ValidationError{fmt.Sprintf("Not correct type for field %s", field.Key)}
 	case int:
 		if field.ValueType.(string) != "int" {
-			return fmt.Errorf("Not correct type for field %s", field.Key)
+			return errors.ValidationError{fmt.Sprintf("Not correct type for field %s", field.Key)}
 		}
 	default:
 		if field.ValueType.(string) != "string" && field.ForeignKey == "" {
-			return fmt.Errorf("Not correct type for field %s", field.Key)
+			return errors.ValidationError{fmt.Sprintf("Not correct type for field %s", field.Key)}
 		}
 	}
 
@@ -82,7 +84,7 @@ func (field *Field) validateType(extraTypes map[string]string) error {
 			var f Field
 			err = json.Unmarshal(b, &f)
 			if err != nil {
-				return fmt.Errorf("Problem converting subfield")
+				return errors.ValidationError{"Problem converting subfield"}
 			}
 			err = f.validateType(extraTypes)
 			if err != nil {
@@ -93,5 +95,7 @@ func (field *Field) validateType(extraTypes map[string]string) error {
 		field.ValueType = fields
 		return nil
 	}
-	return fmt.Errorf("Could not find type %s, allowed types are %v or %v", field.ValueType, extraTypes, allowedTypes)
+	return errors.ValidationError{
+		fmt.Sprintf("Could not find type %s, allowed types are %v or %v", field.ValueType, extraTypes, allowedTypes),
+	}
 }

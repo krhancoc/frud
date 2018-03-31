@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+
+	"github.com/krhancoc/frud/errors"
 )
 
 // DBRequest is the object given to our drivers,  each driver must implement the MakeRequest function.
@@ -18,25 +20,25 @@ type DBRequest struct {
 // Validate will validate the DBRequest with the model provided to make sure the values are able
 // to convert into the proper values given by the model
 // TODO: Check/Enforce type conversion on fields - int, int64 etc.
-// Returns Delete error, Get error, Post error, put Error,
-func (req *DBRequest) Validate() (error, error, error, error) {
-	return nil, nil, req.Model.validateParams(req.Params), nil
-}
-
-// FollowsModel will check to make sure the DBRequest params and queries follow the model attached to
-// the endpoint itself
-func (req *DBRequest) FollowsModel() error {
-
-	fieldMap := req.Model.ToMap()
-	for key := range req.Params {
-		if _, ok := fieldMap[key]; !ok {
-			return fmt.Errorf("Key %s does not exist within the model for %s", key, req.Type)
+func (req *DBRequest) Validate() error {
+	switch req.Type {
+	case "delete":
+		_, ok := req.Params[req.Model.GetID()]
+		if !ok {
+			return errors.ValidationError{fmt.Sprintf("ID field of model required")}
 		}
-	}
-	for key := range req.Queries {
-		if _, ok := fieldMap[key]; !ok {
-			return fmt.Errorf("Key %s does not exist within the model for %s", key, req.Type)
+	case "post":
+		// Enforce empty rules
+		return req.Model.validateParams(req.Params, true)
+	case "put":
+		_, ok := req.Params[req.Model.GetID()]
+		if !ok {
+			return errors.ValidationError{fmt.Sprintf("ID field of model required")}
 		}
+		// Don't enforce empty rules on put's
+		return req.Model.validateParams(req.Params, false)
+	case "get":
+		return req.Model.validateParams(req.Params, false)
 	}
 	return nil
 }

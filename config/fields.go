@@ -9,16 +9,20 @@ import (
 // Fields is the array version of Field
 type Fields []*Field
 
-func (f Fields) validateParams(params map[string]interface{}) error {
+// Validate the params with the fields object.  This will traverse the params with the field, to make sure
+// that rules are followed
+func (f Fields) validateParams(params map[string]interface{}, enforceEmpty bool) error {
 	for _, field := range f {
-		empty := field.IsOptionSet("empty")
+		emptyOpt := field.IsOptionSet("empty")
 		v, ok := params[field.Key]
+		// If user set this field
 		if ok {
-			err := field.validate(v)
+			err := field.validate(v, enforceEmpty)
 			if err != nil {
 				return err
 			}
-		} else if !empty {
+			// Param isnt set, and field is not allowed to be empty.
+		} else if !emptyOpt && enforceEmpty {
 			return errors.ValidationError{fmt.Sprintf("Required field %s missing", field.Key)}
 		}
 	}

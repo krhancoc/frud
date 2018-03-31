@@ -6,7 +6,7 @@ import "fmt"
 // the datamodels, as well as the generic endpoints that will be set.  Things like healthcheck and eventually,
 // the login endpoint
 type ManagerConfig struct {
-	Generics []string      `json:"generics"`
+	Generics []string      `json:"generics,omitempty"`
 	Plugs    []*PlugConfig `json:"plugins"`
 }
 

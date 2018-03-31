@@ -87,21 +87,9 @@ func generic(w http.ResponseWriter, req *http.Request, ctx config.AppContext, pl
 		Type:    plug.Name,
 		Model:   plug.Model,
 	}
-	delete, get, post, put := dbReq.Validate()
-	if delete != nil && req.Method == "delete" {
-		ctx.Render.JSON(w, http.StatusBadRequest, delete.Error())
-		return
-	}
-	if get != nil && req.Method == "get" {
-		ctx.Render.JSON(w, http.StatusBadRequest, get.Error())
-		return
-	}
-	if post != nil && req.Method == "post" {
-		ctx.Render.JSON(w, http.StatusBadRequest, post.Error())
-		return
-	}
-	if put != nil && req.Method == "put" {
-		ctx.Render.JSON(w, http.StatusBadRequest, put.Error())
+	err := dbReq.Validate()
+	if err != nil {
+		ctx.Render.JSON(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	result, err := ctx.Driver.MakeRequest(dbReq)

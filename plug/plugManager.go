@@ -37,6 +37,7 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 		color.Yellow("Plugin %s: %s", plug.Name, plug.Description)
 		color.Yellow("---------------------")
 		var methods map[string]http.HandlerFunc
+		// If crud is set then this means that this is the code method of creating endpoints
 		if plug.Crud != nil {
 			inter := *plug.Crud
 			methods = map[string]http.HandlerFunc{
@@ -53,6 +54,7 @@ func (manager *Manager) AttachRoutes(router *mux.Router, ctx config.AppContext) 
 					Handler(f)
 				color.Green("%s -- %s -- %s", plug.Name, method, plug.Path)
 			}
+			// Else its the Model method
 		} else {
 			router.
 				Methods("GET", "POST", "DELETE", "PUT").

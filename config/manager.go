@@ -36,7 +36,7 @@ func (conf *ManagerConfig) collectTypeIdMap() (map[string]string, error) {
 	return types, nil
 }
 
-func (conf *ManagerConfig) Validate() error {
+func (conf *ManagerConfig) validate() error {
 	err := conf.validateGenerics()
 	if err != nil {
 		return err

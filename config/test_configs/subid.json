@@ -31,7 +31,13 @@
           },
           {
             "key": "idnumber",
-            "value_type": "int"
+            "value_type": [
+              {
+                "key": "subfield",
+                "value_type": "string",
+                "options" : ["id"]
+              }
+            ]
           }
         ]
       },
@@ -48,24 +54,6 @@
           {
             "key": "attending",
             "value_type": "people"
-          },
-          {
-            "key": "substructure",
-            "value_type": [
-              {
-                "key": "sub1",
-                "value_type": "int"
-              },
-              {
-                "key": "sub1a",
-                "value_type": [
-                  {
-                    "key": "sub2",
-                    "value_type": "string"
-                  }
-                ]
-              }
-            ]
           }
         ]
       }

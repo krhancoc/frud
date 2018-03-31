@@ -42,7 +42,8 @@
         "model": [
           {
             "key": "date",
-            "value_type": "string"
+            "value_type": "string",
+            "options": ["id"]
           },
           {
             "key": "attending",

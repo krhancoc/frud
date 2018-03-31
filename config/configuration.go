@@ -9,8 +9,8 @@ type Configuration struct {
 
 // Validate will validate the configuration object, it does this by using the validation methods of
 // the fields below it.  Drip down validation.
-func (conf *Configuration) Validate() error {
-	err := conf.Manager.Validate()
+func (conf *Configuration) validate() error {
+	err := conf.Manager.validate()
 	if err != nil {
 		return err
 	}

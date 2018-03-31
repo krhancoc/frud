@@ -23,6 +23,8 @@ var configTests = []struct {
 	{"duplicate_keys.json", false},
 	{"bad_type.json", false},
 	{"sub_fields.json", true},
+	{"subid.json", false},
+	{"noid.json", false},
 }
 
 func TestLoadConfig(t *testing.T) {

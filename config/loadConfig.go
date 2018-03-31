@@ -19,5 +19,5 @@ func LoadConfig(filename string) (Configuration, error) {
 	if err != nil {
 		return configuration, err
 	}
-	return configuration, configuration.Validate()
+	return configuration, configuration.validate()
 }

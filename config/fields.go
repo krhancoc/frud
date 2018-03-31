@@ -9,12 +9,12 @@ import (
 // Fields is the array version of Field
 type Fields []*Field
 
-func (f Fields) ValidateParams(params map[string]interface{}) error {
+func (f Fields) validateParams(params map[string]interface{}) error {
 	for _, field := range f {
 		empty := field.IsOptionSet("empty")
 		v, ok := params[field.Key]
 		if ok {
-			err := field.Validate(v)
+			err := field.validate(v)
 			if err != nil {
 				return err
 			}
@@ -99,9 +99,8 @@ func (f Fields) Atomic() map[string]*Field {
 
 }
 
-func (f *Fields) validate(extraTypes map[string]string, name string) error {
+func (f *Fields) validate(extraTypes map[string]string, name string, subfield bool) error {
 	idFound := false
-
 	m := make(map[string]bool, len(*f))
 	for _, field := range *f {
 		if field.Key == "" {
@@ -114,19 +113,23 @@ func (f *Fields) validate(extraTypes map[string]string, name string) error {
 				fmt.Sprintf(`Duplicate key - %s - value in model for plugin %s`, field.Key, name),
 			}
 		}
-		err := field.validateType(extraTypes)
+		err := field.validateType(extraTypes, true)
 		if err != nil {
 			return err
 		}
 		m[field.Key] = true
-		for _, option := range field.Options {
-			if option == "id" {
-				if idFound {
-					return errors.ValidationError{fmt.Sprintf("Multiple id's found in model %s", name)}
-				}
-				idFound = true
+		if field.IsOptionSet("id") {
+			if subfield {
+				return errors.ValidationError{fmt.Sprintf("Id found in subfield")}
 			}
+			if idFound {
+				return errors.ValidationError{fmt.Sprintf("Multiple id's found in model %s", name)}
+			}
+			idFound = true
 		}
+	}
+	if !idFound && !subfield {
+		return errors.ValidationError{fmt.Sprintf("No id found in %s", name)}
 	}
 	return nil
 }

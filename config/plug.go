@@ -24,12 +24,19 @@ func (conf *PlugConfig) validate(extraTypes map[string]string) error {
 	if conf.Path == "" {
 		return fmt.Errorf(`Missing "path" field for plugin`)
 	}
-
-	err := conf.Model.validate(extraTypes, conf.Name)
-	if err != nil {
-		return err
+	if len(conf.Model) > 0 {
+		err := conf.Model.validate(extraTypes, conf.Name, false)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-
+	if conf.PathToCode == "" {
+		return fmt.Errorf(`Model field not set and path to code not set`)
+	}
+	if conf.PathToCompiled == "" {
+		return fmt.Errorf(`Model field not set and path to compiled not set`)
+	}
 	return nil
 
 }

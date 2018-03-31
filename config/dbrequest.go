@@ -20,7 +20,7 @@ type DBRequest struct {
 // TODO: Check/Enforce type conversion on fields - int, int64 etc.
 // Returns Delete error, Get error, Post error, put Error,
 func (req *DBRequest) Validate() (error, error, error, error) {
-	return nil, nil, req.Model.ValidateParams(req.Params), nil
+	return nil, nil, req.Model.validateParams(req.Params), nil
 }
 
 // FollowsModel will check to make sure the DBRequest params and queries follow the model attached to

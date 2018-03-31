@@ -16,12 +16,12 @@ type Field struct {
 	ForeignKey string      `json:"foreignkey,omitempty"`
 }
 
-func (field *Field) Validate(val interface{}) error {
+func (field *Field) validate(val interface{}) error {
 	f, ok := field.ValueType.([]*Field)
 	if ok {
 		switch v := val.(type) {
 		case map[string]interface{}:
-			return Fields(f).ValidateParams(v)
+			return Fields(f).validateParams(v)
 		default:
 			return errors.ValidationError{fmt.Sprintf("Not correct type for field %s", field.Key)}
 		}
@@ -52,16 +52,12 @@ func (field *Field) IsOptionSet(option string) bool {
 	return false
 }
 
-func (field *Field) validateType(extraTypes map[string]string) error {
+func (field *Field) validateType(extraTypes map[string]string, subfield bool) error {
+
 	for key, val := range extraTypes {
-		switch f := field.ValueType.(type) {
-		case Fields:
-			return f.validate(extraTypes, field.Key)
-		case string:
-			if f == key {
-				field.ForeignKey = val
-				return nil
-			}
+		if f, ok := field.ValueType.(string); ok && f == key {
+			field.ForeignKey = val
+			return nil
 		}
 	}
 	for _, t := range allowedTypes {
@@ -73,7 +69,7 @@ func (field *Field) validateType(extraTypes map[string]string) error {
 
 	interfaces, ok := field.ValueType.([]interface{})
 	if ok && len(interfaces) > 0 {
-		var fields []*Field
+		var fields Fields
 		for _, i := range interfaces {
 
 			b, err := json.Marshal(i)
@@ -86,14 +82,11 @@ func (field *Field) validateType(extraTypes map[string]string) error {
 			if err != nil {
 				return errors.ValidationError{"Problem converting subfield"}
 			}
-			err = f.validateType(extraTypes)
-			if err != nil {
-				return err
-			}
 			fields = append(fields, &f)
 		}
 		field.ValueType = fields
-		return nil
+
+		return fields.validate(extraTypes, field.Key, true)
 	}
 	return errors.ValidationError{
 		fmt.Sprintf("Could not find type %s, allowed types are %v or %v", field.ValueType, extraTypes, allowedTypes),

@@ -21,7 +21,7 @@ type DBRequest struct {
 // to convert into the proper values given by the model
 // TODO: Check/Enforce type conversion on fields - int, int64 etc.
 func (req *DBRequest) Validate() error {
-	switch req.Type {
+	switch req.Method {
 	case "delete":
 		_, ok := req.Params[req.Model.GetID()]
 		if !ok {

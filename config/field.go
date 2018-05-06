@@ -43,6 +43,8 @@ func (field *Field) validate(val interface{}, enforceEmpty bool) error {
 	return nil
 }
 
+// IsOptionSet checks to see if within that field a specific option flag is
+// set.
 func (field *Field) IsOptionSet(option string) bool {
 	for _, o := range field.Options {
 		if o == option {

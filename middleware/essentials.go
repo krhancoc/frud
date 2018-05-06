@@ -6,10 +6,16 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
-
-	"github.com/krhancoc/gotech/util"
 )
+func ConvertFlatMap(form url.Values) map[string]interface{} {
+    final := make(map[string]interface{}, len(form))
+    for formKey, formValue := range form {
+	final[formKey] = formValue
+    }
+    return final
+}
 
 // Converter will make sure the body always has a JSON object
 func Converter(next http.Handler) http.Handler {
@@ -19,9 +25,8 @@ func Converter(next http.Handler) http.Handler {
 		if r.Method != "GET" {
 			contentType := r.Header.Get("Content-Type")
 			if contentType != "application/json" {
-
 				r.ParseForm()
-				converted := util.ConvertFlatMap(r.Form)
+				converted := ConvertFlatMap(r.Form)
 				jsonString, err := json.Marshal(converted)
 				if err != nil {
 					panic(err)

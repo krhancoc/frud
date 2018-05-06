@@ -12,7 +12,7 @@ var files = []struct {
 	database string
 }{
 	{"mongo.json", "mongo"},
-	{"neo.json", "neo4j"},
+	//{"neo.json", "neo4j"},
 }
 
 var endpoints = []struct {

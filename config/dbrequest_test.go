@@ -91,7 +91,7 @@ var testCases = []struct {
 func TestPostDBRequest(t *testing.T) {
 	for i, test := range testCases {
 		req.Params = test.params
-		_, _, err, _ := req.Validate()
+		err := req.Validate()
 		if err != nil && test.expected {
 			t.Errorf(err.Error())
 		} else if err == nil && !test.expected {
